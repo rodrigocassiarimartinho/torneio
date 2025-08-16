@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste dos Módulos de Estrutura</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
+        .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; background-color: #fff; }
+        h1, h2, h3 { color: #041A4A; }
+        h2 { border-bottom: 2px solid #D9A42A; padding-bottom: 10px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 1rem; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        td.round-title { font-weight: bold; }
+        td.match-id { font-weight: bold; color: #8899a6; width: 1%;}
+    </style>
+</head>
+<body>
+    <h1>Validação dos Módulos de Estrutura Pura</h1>
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { buildSingleBracketStructure } from './js/structures/single_bracket_structure.js';
+        import { buildDoubleBracketStructure } from './js/structures/double_bracket_structure.js';
+
+        const resultsContainer = document.getElementById('test-results');
+
+        function renderStructureToPage(description, structure) {
+            let html = `<div class="test-case">`;
+            html += `<h2>${description}</h2>`;
+
+            const renderTable = (title, bracket) => {
+                if (!bracket || bracket.length === 0) return;
+                html += `<h3>${title}</h3><table><thead><tr><th>Partida</th><th>Jogador 1 (Slot)</th><th>Jogador 2 (Slot)</th></tr></thead><tbody>`;
+                (bracket || []).forEach((round, i) => {
+                    html += `<tr><td colspan="3" class="round-title">Rodada ${i+1}</td></tr>`;
+                    (round || []).forEach(match => {
+                        const p1_text = match.p1?.name || '(Vazio)';
+                        const p2_text = match.p2?.name || '(Vazio)';
+                        html += `<tr><td class="match-id">M${match.id}</td><td>${p1_text}</td><td>${p2_text}</td></tr>`;
+                    });
+                });
+                html += `</tbody></table>`;
+            };
+            
+            if (structure.rounds) { // É uma chave simples
+                 renderTable('Chave de Eliminação Simples', structure.rounds);
+            } else { // É uma chave dupla
+                renderTable('Chave dos Vencedores', structure.winnersBracket);
+                renderTable('Chave dos Perdedores', structure.losersBracket);
+                renderTable('Grande Final', structure.grandFinal);
+            }
+
+            html += `</div>`;
+            resultsContainer.innerHTML += html;
+        }
+        
+        // Teste para 64 jogadores
+        const playerCount = 64;
+        
+        const singleStructure = buildSingleBracketStructure(playerCount);
+        renderStructureToPage(`Teste de Eliminação Simples com ${playerCount} Jogadores`, singleStructure);
+
+        const doubleStructure = buildDoubleBracketStructure(playerCount);
+        renderStructureToPage(`Teste de Dupla Eliminação com ${playerCount} Jogadores`, doubleStructure);
+
+    </script>
+</body>
+</html>
