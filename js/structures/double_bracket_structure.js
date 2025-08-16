@@ -1,100 +1,76 @@
-// js/double_elimination_structure.js
+// js/structures/double_bracket_structure.js
+import * as TMath from '../math.js';
 
-/**
- * Gera a estrutura completa de chaves dupla-eliminação.
- * @param {number} totalPlayers - número de jogadores
- * @param {number} [numWinnersRounds] - número de rodadas na chave dos vencedores (opcional). Se não, calcula automaticamente.
- * @param {number} [numLosersRounds] - número de rodadas na chave dos perdedores (opcional). Se não, calcula automaticamente.
- * @returns {Object} - estrutura contendo rodadas vencedoras e perdedoras
- */
-function generateDoubleEliminationBracket(totalPlayers, numWinnersRounds, numLosersRounds) {
-  const playerCount = Math.max(1, Math.floor(totalPlayers));
-  const bracketSize = getNextPowerOfTwo(playerCount);
-  const totalWinnersRounds = numWinnersRounds || getWinnersBracketRoundsCount(bracketSize);
-  const totalLosersRounds = numLosersRounds || getLosersBracketRoundsCount(bracketSize);
+export function buildDoubleBracketStructure(n_original) {
+    const bracketSize = TMath.getNextPowerOfTwo(n_original);
+    if (bracketSize < 2) return { winnersBracket: [], losersBracket: [], grandFinal: [] };
 
-  const winnersRounds = [];
-  const losersRounds = [];
+    let matchIdCounter = 1;
+    const winnersBracket = [];
+    const losersBracket = [];
+    const grandFinal = [];
 
-  // Gerar rodada vencedores
-  for (let r = 1; r <= totalWinnersRounds; r++) {
-    const matchesInRound = getMatchesCountInRound(r, bracketSize);
-    const rodada = [];
-    for (let m = 0; m < matchesInRound; m++) {
-      rodada.push({
-        id: `w_r${r}_m${m}`,
-        player1: null,
-        player2: null,
-        seedPlayer1: null,
-        seedPlayer2: null,
-        scorePlayer1: null,
-        scorePlayer2: null,
-        status: 'pending',
-        // Fonte das entradas na próxima fase
-        sourcePlayer1: `winner of w_r${r - 1}_m${Math.floor(m / 2)}`,
-        sourcePlayer2: `winner of w_r${r - 1}_m${Math.floor(m / 2)}`
-      });
+    const numWinnersRounds = TMath.getWinnersBracketRoundsCount(bracketSize);
+    for (let i = 1; i <= numWinnersRounds; i++) {
+        const numMatches = TMath.getWinnersRoundMatchCount(i, bracketSize);
+        winnersBracket.push(Array.from({ length: numMatches }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
     }
-    winnersRounds.push(rodada);
-  }
 
-  // Gerar rodada perdedores
-  for (let r = 1; r <= totalLosersRounds; r++) {
-    const matchesInRound = getLosersMatchesCount(r, bracketSize);
-    const rodada = [];
-    for (let m = 0; m < matchesInRound; m++) {
-      rodada.push({
-        id: `l_r${r}_m${m}`,
-        player1: null,
-        player2: null,
-        seedPlayer1: null,
-        seedPlayer2: null,
-        scorePlayer1: null,
-        scorePlayer2: null,
-        status: 'pending',
-        sourcePlayer1: `loser of w_r${getLoserSourceRound(r)}_m${Math.floor(m / 2)}`,
-        sourcePlayer2: `loser of w_r${getLoserSourceRound(r)}_m${Math.floor(m / 2)}`
-      });
+    const numLosersRounds = TMath.getLosersBracketRoundsCount(bracketSize);
+    for (let i = 1; i <= numLosersRounds; i++) {
+        const numMatches = TMath.getLosersRoundMatchCount(i, bracketSize);
+        losersBracket.push(Array.from({ length: numMatches }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
     }
-    losersRounds.push(rodada);
-  }
 
-  return {
-    size: bracketSize,
-    winnersRounds,
-    losersRounds
-  };
-}
+    for(let r=0; r < winnersBracket.length - 1; r++) {
+        const currentRound = winnersBracket[r];
+        const nextRound = winnersBracket[r+1];
+        nextRound.forEach((match, index) => {
+            match.p1 = { name: `Winner of M${currentRound[index*2].id}`, isPlaceholder: true };
+            match.p2 = { name: `Winner of M${currentRound[index*2+1].id}`, isPlaceholder: true };
+        });
+    }
 
-/**
- * Funções auxiliares
- */
+    if (losersBracket[0] && winnersBracket[0]) {
+        const losersFromV1 = winnersBracket[0].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
+        losersBracket[0].forEach((match, index) => {
+            match.p1 = losersFromV1[index*2];
+            match.p2 = losersFromV1[index*2 + 1];
+        });
+    }
 
-function getNextPowerOfTwo(n) {
-  const N = Math.max(1, Math.floor(n));
-  let p = 1;
-  while (p < N) p <<= 1;
-  return p;
-}
+    let wbLoserDropIndex = 1;
+    for (let r = 1; r < losersBracket.length; r++) {
+        const pRoundIndex = r + 1;
+        const currentLosersRound = losersBracket[r];
+        
+        let lbWinners = losersBracket[r-1].map(m => ({ name: `Winner of M${m.id}`, isPlaceholder: true }));
+        let wbLosers = [];
 
-function getWinnersBracketRoundsCount(bracketSize) {
-  return Math.log2(bracketSize);
-}
+        const loserDest = TMath.getLoserDestinationRound(wbLoserDropIndex + 1);
+        if (loserDest === pRoundIndex) {
+            wbLosers = winnersBracket[wbLoserDropIndex].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
+            if (pRoundIndex > 1) { wbLosers.reverse(); }
+            wbLoserDropIndex++;
+        }
+        
+        currentLosersRound.forEach((match, matchIndex) => {
+            const isInternalRound = lbWinners.length > 0 && wbLosers.length === 0;
+            if (isInternalRound) {
+                match.p1 = lbWinners[matchIndex*2];
+                match.p2 = lbWinners[matchIndex*2 + 1];
+            } else {
+                match.p1 = lbWinners[matchIndex];
+                match.p2 = wbLosers[matchIndex];
+            }
+        });
+    }
 
-function getLosersBracketRoundsCount(bracketSize) {
-  return Math.max(0, 2 * Math.log2(bracketSize) - 2);
-}
-
-function getMatchesCountInRound(round, totalSize) {
-  if (round === 1) return totalSize / 2;
-  return Math.ceil(totalSize / Math.pow(2, round));
-}
-
-function getLosersMatchesCount(r, totalSize) {
-  const p = Math.ceil(r / 2);
-  return Math.ceil(totalSize / Math.pow(2, p + 1));
-}
-
-function getLoserSourceRound(r) {
-  return r;
+    if (bracketSize >= 2) {
+        const wbFinalWinner = { name: `Winner of M${winnersBracket[numWinnersRounds-1][0].id}`, isPlaceholder: true };
+        const lbFinalWinner = losersBracket[numLosersRounds-1] ? { name: `Winner of M${losersBracket[numLosersRounds-1][0].id}`, isPlaceholder: true } : {name: 'TBD'};
+        grandFinal.push([{ id: matchIdCounter++, p1: wbFinalWinner, p2: lbFinalWinner }]);
+    }
+    
+    return { winnersBracket, losersBracket, grandFinal };
 }
