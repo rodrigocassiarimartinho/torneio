@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Teste - Estrutura Eliminação Simples</title>
+</head>
+<body>
+<h1>Teste - Estrutura de Eliminção Simples</h1>
+
+<script type="module">
+  // ================== Código da estrutura de eliminação simples ===================
+
+  // Funções auxiliares
+  function getNextPowerOfTwo(n) {
+    const N = Math.max(1, Math.floor(n));
+    let p = 1;
+    while (p < N) p <<= 1;
+    return p;
+  }
+
+  function getBracketRounds(bracketSize) {
+    return Math.log2(bracketSize);
+  }
+
+  function getMatchesCountInRound(roundNumber, totalSize) {
+    if (roundNumber === 1) return totalSize / 2;
+    const matches = totalSize / Math.pow(2, roundNumber);
+    return Math.ceil(matches);
+  }
+
+  /**
+   * Função principal que gera a estrutura da chave de eliminação simples
+   * @param {number} totalPlayers - número de jogadores
+   * @param {number} [numRounds] - número de rodadas (opcional)
+   * @returns {Object} - estrutura contendo rodadas e partidas
+   */
+  function generateSingleEliminationBracket(totalPlayers, numRounds) {
+    const playerCount = Math.max(1, Math.floor(totalPlayers));
+    const bracketSize = getNextPowerOfTwo(playerCount);
+    const totalRounds = numRounds || getBracketRounds(bracketSize);
+    const bracket = [];
+
+    for (let round = 1; round <= totalRounds; round++) {
+      const matchesInRound = getMatchesCountInRound(round, bracketSize);
+      const rodada = [];
+      for (let matchIdx = 0; matchIdx < matchesInRound; matchIdx++) {
+        rodada.push({
+          id: `r${round}_m${matchIdx}`,
+          player1: null,
+          player2: null,
+          sourcePlayer1: `winner of r${round - 1}_m${Math.floor(matchIdx / 2)}`,
+          sourcePlayer2: `winner of r${round - 1}_m${Math.floor(matchIdx / 2)}`
+        });
+      }
+      bracket.push(rodada);
+    }
+
+    return {
+      size: bracketSize,
+      totalRounds: getBracketRounds(bracketSize),
+      rounds: bracket,
+    };
+  }
+
+  // =================== Execução de teste =====================
+  // Testando com 10 jogadores (por exemplo)
+  const totalPlayers = 10;
+  const estrutura = generateSingleEliminationBracket(totalPlayers);
+  console.log(estrutura);
+  document.body.innerHTML += '<pre>' + JSON.stringify(estrutura, null, 2) + '</pre>';
+
+</script>
+</body>
+</html>
