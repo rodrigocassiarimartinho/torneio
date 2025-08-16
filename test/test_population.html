@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Teste dos Módulos de População</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
@@ -18,10 +19,14 @@
     <div id="test-results"></div>
 
     <script type="module">
-        import { buildSingleBracketStructure } from './js/structures/single_bracket_structure.js';
-        import { buildDoubleBracketStructure } from './js/structures/double_bracket_structure.js';
-        import { populateSingleBracket } from './js/logic/single_player_logic.js';
-        import { populateDoubleBracket } from './js/logic/double_player_logic.js';
+        // **INÍCIO DA CORREÇÃO**
+        // Caminhos atualizados para funcionar a partir da pasta /test/
+        import { buildSingleBracketStructure } from '../js/structures/single_bracket_structure.js';
+        import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
+        import { populateSingleBracket } from '../js/logic/single_player_logic.js';
+        import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
+        import { parsePlayerInput } from '../js/parsing.js';
+        // **FIM DA CORREÇÃO**
 
         const resultsContainer = document.getElementById('test-results');
 
