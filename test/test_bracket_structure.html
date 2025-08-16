@@ -35,8 +35,8 @@
                 (bracket || []).forEach((round, i) => {
                     html += `<tr><td colspan="3" class="round-title">Rodada ${i+1}</td></tr>`;
                     (round || []).forEach(match => {
-                        const p1_text = match.p1?.name || '(Vazio)';
-                        const p2_text = match.p2?.name || '(Vazio)';
+                        const p1_text = match.p1?.name || '(Apontador)';
+                        const p2_text = match.p2?.name || '(Apontador)';
                         html += `<tr><td class="match-id">M${match.id}</td><td>${p1_text}</td><td>${p2_text}</td></tr>`;
                     });
                 });
