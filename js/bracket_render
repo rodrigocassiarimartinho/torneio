@@ -1,4 +1,4 @@
-// js/bracketRender.js - Versão Final e Definitiva (Estratégia 4.0)
+// js/bracket_render.js - Versão Final e Definitiva (Estratégia 4.0)
 
 const CONFIG = {
     SVG_WIDTH: 300,
