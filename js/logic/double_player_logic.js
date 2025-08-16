@@ -1,5 +1,5 @@
 // js/logic/double_player_logic.js
-import { getNextPowerOfTwo } from '../tournamentMath.js';
+import { getNextPowerOfTwo } from '../math.js';
 import { generateSeedOrder, shuffleArray } from '../utils.js';
 import { parsePlayerInput } from '../parsing.js';
 
