@@ -3,55 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <title>Teste do Módulo de Resultados</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
+        .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; }
+        h1, h2, h3 { color: #041A4A; }
+        .state-container { display: flex; gap: 2rem; }
+        .state { flex: 1; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-size: 12px; }
+        .success { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
+    </style>
 </head>
 <body>
-    <h1>Abra a consola (F12) para ver os resultados dos testes.</h1>
+    <h1>Validação do Módulo de Resultados (`results.js`)</h1>
+    <div id="test-results"></div>
+
     <script type="module">
         import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
         import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
         import { resolveMatch, resolveInitialByes } from '../js/results.js';
         import { parsePlayerInput } from '../js/parsing.js';
+        // **INÍCIO DA CORREÇÃO**
+        import { getNextPowerOfTwo } from '../js/math.js';
+        // **FIM DA CORREÇÃO**
 
-        console.log("%c--- INICIANDO TESTES DE RESULTADOS ---", "font-size: 1.5em; font-weight: bold;");
-
-        const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi\n5. Eva\n6. Fabio`; // 6 Jogadores (2 Byes)
+        const resultsContainer = document.getElementById('test-results');
+        const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi\n5. Eva\n6. Fabio`; // 6 Jogadores -> 2 Byes
         const { seededPlayers, unseededPlayers } = parsePlayerInput(playerList);
         const playerCount = seededPlayers.length + unseededPlayers.length;
 
+        // --- GERAÇÃO DOS DADOS DE BASE ---
         let structure = buildDoubleBracketStructure(playerCount);
         let tournamentData = { type: 'double', ...populateDoubleBracket(structure, playerList) };
 
         // --- TESTE 1: Resolução Automática dos Byes ---
-        console.group("Teste 1: Resolução Automática dos Byes");
-        const stateAfterByes = resolveInitialByes(tournamentData);
+        const initialStateByes = JSON.parse(JSON.stringify(tournamentData));
+        const stateAfterByes = resolveInitialByes(initialStateByes);
         
+        let byeTestHtml = `<div class="test-case"><h2>Teste 1: Resolução Automática dos Byes</h2>`;
         const anaInV2 = stateAfterByes.winnersBracket[1][0].p1.name === 'Ana';
         const biaInV2 = stateAfterByes.winnersBracket[1][1].p2.name === 'Bia';
         const byeLoserInP1 = stateAfterByes.losersBracket[0].find(m => m.p1.isBye || m.p2.isBye);
         
         if (anaInV2 && biaInV2 && byeLoserInP1) {
-            console.log("%c✔️ SUCESSO: Byes resolvidos e avançados corretamente.", "color: green");
+            byeTestHtml += `<p class="success">✔️ SUCESSO: Byes resolvidos e avançados corretamente.</p>`;
         } else {
-            console.error("❌ FALHA: A resolução de byes falhou.");
+            byeTestHtml += `<p class="fail">❌ FALHA: A resolução de byes falhou.</p>`;
         }
-        console.groupEnd();
-        
+        byeTestHtml += `<div class="state-container"><div class="state"><h3>Estado Inicial</h3><pre>${JSON.stringify(initialStateByes, null, 2)}</pre></div>`;
+        byeTestHtml += `<div class="state"><h3>Estado Final (Pós-Byes)</h3><pre>${JSON.stringify(stateAfterByes, null, 2)}</pre></div></div></div>`;
+        resultsContainer.innerHTML += byeTestHtml;
+
+
         // --- TESTE 2: Resolução de Partida Manual ---
-        console.group("Teste 2: Resolução de Partida Manual (Carlos vs Fabio)");
         const matchToUpdate = stateAfterByes.winnersBracket[0].find(m => m.p1?.name === 'Carlos');
         const matchIdToUpdate = matchToUpdate.id;
         const finalState = resolveMatch(stateAfterByes, matchIdToUpdate, { p1: '7', p2: '4' });
-
+        
+        let matchTestHtml = `<div class="test-case"><h2>Teste 2: Resolução de Partida Manual (Carlos 7 vs. Fabio 4)</h2>`;
         const carlosInV2 = finalState.winnersBracket[1][1].p1.name === 'Carlos';
         const fabioInLosers = finalState.losersBracket[0].find(m => m.p1?.name === 'Fabio' || m.p2?.name === 'Fabio');
-        
-        if(carlosInV2 && fabioInLosers) {
-             console.log("%c✔️ SUCESSO: Resolução de partida manual funcionou corretamente.", "color: green");
-        } else {
-            console.error("❌ FALHA: A resolução de partida manual falhou.");
-        }
-        console.groupEnd();
 
+        if (carlosInV2 && fabioInLosers) {
+            matchTestHtml += `<p class="success">✔️ SUCESSO: Resolução de partida manual funcionou.</p>`;
+        } else {
+            matchTestHtml += `<p class="fail">❌ FALHA: A resolução de partida manual falhou.</p>`;
+        }
+        matchTestHtml += `<div class="state-container"><div class="state"><h3>Estado Inicial (Pós-Byes)</h3><pre>${JSON.stringify(stateAfterByes, null, 2)}</pre></div>`;
+        matchTestHtml += `<div class="state"><h3>Estado Final</h3><pre>${JSON.stringify(finalState, null, 2)}</pre></div></div></div>`;
+        resultsContainer.innerHTML += matchTestHtml;
     </script>
 </body>
 </html>
