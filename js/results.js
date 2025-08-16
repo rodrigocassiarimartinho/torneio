@@ -51,11 +51,8 @@ function _determineWinner(match) {
 function _advanceWinner(winner, matchInfo, data) {
     const { match, bracket, roundIndex } = matchInfo;
     const matchIndexInRound = bracket[roundIndex].findIndex(m => m && m.id === match.id);
-    // **INÍCIO DA CORREÇÃO**
-    // Garante que todas as propriedades do jogador sejam preservadas no clone
-    const winnerData = { ...winner };
-    delete winnerData.score; // Remove o placar para a próxima partida
-    // **FIM DA CORREÇÃO**
+    const winnerData = { ...winner }; // Clone completo
+    delete winnerData.score;
     const nextRound = bracket[roundIndex + 1];
     if (nextRound) {
         const nextMatch = nextRound[Math.floor(matchIndexInRound / 2)];
@@ -72,11 +69,8 @@ function _dropLoser(loser, matchInfo, data) {
     const destPRound = getLoserDestinationRound(vRound);
     const destRound = data.losersBracket[destPRound - 1];
     if(destRound) {
-        // **INÍCIO DA CORREÇÃO**
-        // Garante que todas as propriedades do jogador sejam preservadas no clone
-        const loserData = { ...loser };
+        const loserData = { ...loser }; // Clone completo
         delete loserData.score;
-        // **FIM DA CORREÇÃO**
         const placeholderName = `Loser of M${match.id}`;
         for(const destMatch of destRound) {
             if (destMatch.p1?.name === placeholderName) { destMatch.p1 = loserData; break; }
@@ -112,9 +106,10 @@ export function resolveInitialByes(tournamentData) {
         if (match && (match.p1?.isBye || match.p2?.isBye)) {
             const matchInfo = findMatchInTournament(match.id, dataCopy);
             const { winner, loser } = _determineWinner(match);
+
             if(winner) {
                 _advanceWinner(winner, matchInfo, dataCopy);
-                if (dataCopy.type === 'double' && loser) { // O perdedor é sempre o bye
+                if (dataCopy.type === 'double' && loser) {
                     _dropLoser(loser, matchInfo, dataCopy);
                 }
             }
