@@ -4,12 +4,12 @@
 // geralmente a próxima potência de dois >= número de jogadores.
 // As funções são pequenas, puras e bem documentadas.
 
- /**
-  * Retorna a menor potência de 2 maior ou igual a bracketSize.
-  * Exemplo: getNextPowerOfTwo(6) => 8, getNextPowerOfTwo(8) => 8
-  * @param {number} bracketSize - tamanho desejado
-  * @returns {number} - próxima potência de dois >= bracketSize
-  */
+/**
+ * Retorna a menor potência de 2 maior ou igual a bracketSize.
+ * Exemplo: getNextPowerOfTwo(6) => 8, getNextPowerOfTwo(8) => 8
+ * @param {number} bracketSize - tamanho desejado
+ * @returns {number} - próxima potência de dois >= bracketSize
+ */
 export function getNextPowerOfTwo(bracketSize) {
   const n = Number(bracketSize) || 0;
   if (n < 1) return 1;
@@ -71,20 +71,3 @@ export function getWinnersRoundMatchCount(vRoundIndex, bracketSize) {
   return Math.floor(adj / Math.pow(2, r));
 }
 
-/**
- * Número de partidas na rodada pRoundIndex (1-based) da chave dos perdedores.
- * Baseado em uma fórmula aproximada para brackets de potência de dois.
- * @param {number} pRoundIndex - índice da rodada
- * @param {number} bracketSize - tamanho da bracket
- * @returns {number} - quantidade de partidas nessa rodada
- */
-export function getLosersRoundMatchCount(pRoundIndex, bracketSize) {
-  const p = Number(pRoundIndex) || 1;
-  const size = Number(bracketSize) || 1;
-  const adj = isPowerOfTwo(size) ? size : getNextPowerOfTwo(size);
-  // Esta fórmula funciona para o padrão de loser's bracket em double-elim
-  return Math.floor(adj / Math.pow(2, Math.ceil(p / 2) + 1));
-}
-
-/**
- * Retorna a rodada de destino do perdedor na chave dos perd
