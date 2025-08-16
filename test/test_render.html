@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Teste de Renderização da Chave (4.0)</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
         .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; background-color: #fff; }
@@ -43,9 +43,10 @@
     </div>
 
     <script type="module">
-        import { buildDoubleBracketStructure } from './js/structures/double_bracket_structure.js';
-        import { populateDoubleBracket } from './js/logic/double_player_logic.js';
-        import { renderBracket } from './js/bracketRender.js';
+        // **CAMINHOS CORRIGIDOS**
+        import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
+        import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
+        import { renderBracket } from '../js/bracketRender.js';
 
         const playerList = Array.from({length: 8}, (_, i) => `${i+1}. S${i+1}`).join('\n') + '\n' + Array.from({length: 12}, (_, i) => `P${i+9}`).join('\n');
         const playerCount = 20;
