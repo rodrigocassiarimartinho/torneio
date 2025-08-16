@@ -1,4 +1,4 @@
-// js/tournamentMath.js
+// js/math.js
 
 export function getNextPowerOfTwo(n) {
     let p = 1;
