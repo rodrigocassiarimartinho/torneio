@@ -1,5 +1,5 @@
 // js/logic/single_player_logic.js
-import { getNextPowerOfTwo } from '../math.js';
+import { getNextPowerOfTwo } from '../tournamentMath.js';
 import { generateSeedOrder, shuffleArray } from '../utils.js';
 import { parsePlayerInput } from '../parsing.js';
 
