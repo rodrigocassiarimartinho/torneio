@@ -1,7 +1,7 @@
-// js/results.js
-import { getLoserDestinationRound } from './math.js';
+// js/results.js - Versão com a lógica de clonagem corrigida
 
-// --- Funções Auxiliares Puras (internas a este módulo) ---
+import { getLoserDestinationRound } from './tournamentMath.js';
+
 function findMatchAndRoundIndex(rounds, matchId) {
     if (!rounds) return { match: null, round: null, roundIndex: -1 };
     for (let i = 0; i < rounds.length; i++) {
@@ -51,7 +51,10 @@ function _determineWinner(match) {
 function _advanceWinner(winner, matchInfo, data) {
     const { match, bracket, roundIndex } = matchInfo;
     const matchIndexInRound = bracket[roundIndex].findIndex(m => m && m.id === match.id);
-    const winnerData = { name: winner.name, seed: winner.seed }; // Clone limpo
+    // **INÍCIO DA CORREÇÃO**
+    // Garante que a propriedade `isBye` seja preservada, se existir
+    const winnerData = { name: winner.name, seed: winner.seed, isBye: winner.isBye || false };
+    // **FIM DA CORREÇÃO**
     const nextRound = bracket[roundIndex + 1];
     if (nextRound) {
         const nextMatch = nextRound[Math.floor(matchIndexInRound / 2)];
@@ -68,7 +71,10 @@ function _dropLoser(loser, matchInfo, data) {
     const destPRound = getLoserDestinationRound(vRound);
     const destRound = data.losersBracket[destPRound - 1];
     if(destRound) {
-        const loserData = { name: loser.name, seed: loser.seed }; // Clone limpo
+        // **INÍCIO DA CORREÇÃO**
+        // Garante que a propriedade `isBye` seja preservada
+        const loserData = { name: loser.name, seed: loser.seed, isBye: loser.isBye || false };
+        // **FIM DA CORREÇÃO**
         const placeholderName = `Loser of M${match.id}`;
         for(const destMatch of destRound) {
             if (destMatch.p1?.name === placeholderName) { destMatch.p1 = loserData; break; }
@@ -77,7 +83,6 @@ function _dropLoser(loser, matchInfo, data) {
     }
 }
 
-// --- Funções Principais Exportadas ---
 export function resolveMatch(tournamentData, matchId, scores) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
     const matchInfo = findMatchInTournament(matchId, dataCopy);
@@ -105,10 +110,9 @@ export function resolveInitialByes(tournamentData) {
         if (match && (match.p1?.isBye || match.p2?.isBye)) {
             const matchInfo = findMatchInTournament(match.id, dataCopy);
             const { winner, loser } = _determineWinner(match);
-
             if(winner) {
                 _advanceWinner(winner, matchInfo, dataCopy);
-                if (dataCopy.type === 'double' && loser?.isBye) {
+                if (dataCopy.type === 'double' && loser) {
                     _dropLoser(loser, matchInfo, dataCopy);
                 }
             }
