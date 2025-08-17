@@ -21,30 +21,22 @@
     </div>
 
     <script type="module">
-        // **INÍCIO DA CORREÇÃO**
-        // Caminhos atualizados para funcionar a partir da pasta /test/
         import { setupInteractivity } from '../js/interactivity.js';
-        import { resolveMatch } from '../js/results.js';
-        // **FIM DA CORREÇÃO**
         
-        console.log("%c--- INICIANDO TESTE DE INTERATIVIDADE ---", "font-size: 1.5em; font-weight: bold;");
-
-        // --- DADOS E FUNÇÕES MOCK (SIMULADAS) ---
-        let mockTournamentData = {
-            type: 'single',
-            rounds: [[{ id: 1, p1: { name: 'Ana' }, p2: { name: 'Bia' } }]]
-        };
+        // Mocks (simulações) dos outros módulos
+        let mockTournamentData = { type: 'single', rounds: [[{ id: 1, p1: { name: 'Ana' }, p2: { name: 'Bia' } }]] };
         
         const getMockData = () => mockTournamentData;
         const setMockData = (newData) => {
-            mockTournamentData = newData;
             console.log("%c✔️ SUCESSO: O estado foi atualizado!", "color: green; font-weight: bold;");
+            mockTournamentData = newData;
         };
         const mockFullRender = () => {
             console.log("%c✔️ SUCESSO: A função de renderização foi chamada.", "color: green; font-weight: bold;");
         };
 
-        // --- O TESTE ---
+        console.log("%c--- INICIANDO TESTE DE INTERATIVIDADE ---", "font-size: 1.5em; font-weight: bold;");
+
         // 1. "Liga" a interatividade
         setupInteractivity(getMockData, setMockData, mockFullRender);
 
