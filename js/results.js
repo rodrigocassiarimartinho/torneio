@@ -1,4 +1,5 @@
-// js/results.js
+// js/results.js - Versão com a exportação corrigida
+
 import { getLoserDestinationRound } from './math.js';
 
 // --- Funções Auxiliares Puras (internas a este módulo) ---
@@ -16,24 +17,17 @@ function findMatchAndRoundIndex(rounds, matchId) {
 }
 
 function findMatchInTournament(matchId, tournamentData) {
-    const data = tournamentData.type === 'single' ? { rounds: tournamentData.rounds, type: 'single', ...tournamentData } : tournamentData;
-    if (!data) return { match: null };
-
-    if (data.rounds) {
-        const result = findMatchAndRoundIndex(data.rounds, matchId);
-        if (result.match) return { ...result, bracket: data.rounds, bracketName: 'rounds' };
-    }
-    if (data.winnersBracket) {
-        let result = findMatchAndRoundIndex(data.winnersBracket, matchId);
-        if (result.match) return { ...result, bracket: data.winnersBracket, bracketName: 'winnersBracket' };
-    }
-    if (data.losersBracket) {
-        let result = findMatchAndRoundIndex(data.losersBracket, matchId);
-        if (result.match) return { ...result, bracket: data.losersBracket, bracketName: 'losersBracket' };
-    }
-    if (data.grandFinal) {
-        let result = findMatchAndRoundIndex(data.grandFinal, matchId);
-        if (result.match) return { ...result, bracket: data.grandFinal, bracketName: 'grandFinal' };
+    if (!tournamentData.type) return { match: null };
+    if (tournamentData.type === 'single') {
+        const result = findMatchAndRoundIndex(tournamentData.rounds, matchId);
+        return { ...result, bracket: tournamentData.rounds, bracketName: 'rounds' };
+    } else if (tournamentData.type === 'double') {
+        let result = findMatchAndRoundIndex(tournamentData.winnersBracket, matchId);
+        if (result.match) return { ...result, bracket: tournamentData.winnersBracket, bracketName: 'winnersBracket' };
+        result = findMatchAndRoundIndex(tournamentData.losersBracket, matchId);
+        if (result.match) return { ...result, bracket: tournamentData.losersBracket, bracketName: 'losersBracket' };
+        result = findMatchAndRoundIndex(tournamentData.grandFinal, matchId);
+        if (result.match) return { ...result, bracket: tournamentData.grandFinal, bracketName: 'grandFinal' };
     }
     return { match: null };
 }
@@ -41,13 +35,15 @@ function findMatchInTournament(matchId, tournamentData) {
 function _determineWinner(match) {
     let winner = null, loser = null;
     const p1 = match.p1, p2 = match.p2;
-    if (p2?.score === 'WO') { winner = p1; loser = p2; }
+    if (p1?.isBye) { winner = p2; loser = p1; }
+    else if (p2?.isBye) { winner = p1; loser = p2; }
     else if (p1?.score === 'WO') { winner = p2; loser = p1; }
+    else if (p2?.score === 'WO') { winner = p1; loser = p2; }
     else {
         const score1 = parseInt(p1?.score), score2 = parseInt(p2?.score);
-        if (!isNaN(score1) && !isNaN(score2) && score1 !== score2) {
+        if (!isNaN(score1) && !isNaN(score2)) {
             if (score1 > score2) { winner = p1; loser = p2; }
-            else { winner = p2; loser = p1; }
+            else if (score2 > score1) { winner = p2; loser = p1; }
         }
     }
     return { winner, loser };
@@ -84,59 +80,7 @@ function _dropLoser(loser, matchInfo, data) {
     }
 }
 
-function _defineAutomaticScores(data) {
-    let changed = false;
-    const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket];
-    allBrackets.forEach(bracket => {
-        (bracket || []).forEach(round => {
-            (round || []).forEach(match => {
-                if (match && (!match.p1?.score || !match.p2?.score)) {
-                    if (match.p1 && match.p2) { // Só processa partidas com 2 jogadores
-                        if (match.p1.isBye && !match.p1.score) { match.p1.score = 'WO'; changed = true; }
-                        if (match.p2.isBye && !match.p2.score) { match.p2.score = 'WO'; changed = true; }
-                    }
-                }
-            });
-        });
-    });
-    return changed;
-}
-
-function _calculateResultsAndAdvancePlayers(data) {
-    let changed = false;
-    const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket, data.grandFinal];
-    allBrackets.forEach(bracket => {
-        (bracket || []).forEach((round, roundIndex) => {
-            (round || []).forEach(match => {
-                if (match && (match.p1?.score || match.p2?.score) && !match.winner) {
-                    const { winner, loser } = _determineWinner(match);
-                    if (winner) {
-                        match.winner = winner.name;
-                        const matchInfo = findMatchInTournament(match.id, data);
-                        _advanceWinner(winner, matchInfo, data);
-                        if (data.type === 'double' && matchInfo.bracketName === 'winnersBracket' && loser) {
-                            _dropLoser(loser, matchInfo, data);
-                        }
-                        changed = true;
-                    }
-                }
-            });
-        });
-    });
-    return changed;
-}
-
-function _runResolutionLoop(tournamentData) {
-    let dataCopy = JSON.parse(JSON.stringify(tournamentData));
-    let changedInLoop;
-    do {
-        const scoresChanged = _defineAutomaticScores(dataCopy);
-        const resultsChanged = _calculateResultsAndAdvancePlayers(dataCopy);
-        changedInLoop = scoresChanged || resultsChanged;
-    } while (changedInLoop);
-    return dataCopy;
-}
-
+// --- Funções Principais Exportadas ---
 export function resolveMatch(tournamentData, matchId, scores) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
     const matchInfo = findMatchInTournament(matchId, dataCopy);
@@ -145,9 +89,34 @@ export function resolveMatch(tournamentData, matchId, scores) {
     if (matchInfo.match.p1) matchInfo.match.p1.score = scores.p1;
     if (matchInfo.match.p2) matchInfo.match.p2.score = scores.p2;
 
-    return _runResolutionLoop(dataCopy);
+    const { winner, loser } = _determineWinner(matchInfo.match);
+
+    if (winner) {
+        _advanceWinner(winner, matchInfo, dataCopy);
+        if (dataCopy.type === 'double' && matchInfo.bracketName === 'winnersBracket' && loser) {
+            _dropLoser(loser, matchInfo, dataCopy);
+        }
+    }
+    return dataCopy;
 }
 
-export function resolveInitialState(tournamentData) {
-    return _runResolutionLoop(tournamentData);
+// **INÍCIO DA CORREÇÃO**
+export function resolveInitialByes(tournamentData) {
+// **FIM DA CORREÇÃO**
+    let dataCopy = JSON.parse(JSON.stringify(tournamentData));
+    const firstRound = (dataCopy.type === 'single') ? dataCopy.rounds[0] : dataCopy.winnersBracket[0];
+    
+    firstRound.forEach(match => {
+        if (match && (match.p1?.isBye || match.p2?.isBye)) {
+            const matchInfo = findMatchInTournament(match.id, dataCopy);
+            const { winner, loser } = _determineWinner(match);
+            if(winner) {
+                _advanceWinner(winner, matchInfo, dataCopy);
+                if (dataCopy.type === 'double' && loser) {
+                    _dropLoser(loser, matchInfo, dataCopy);
+                }
+            }
+        }
+    });
+    return dataCopy;
 }
