@@ -1,33 +1,21 @@
-// js/results.js - Versão com a exportação corrigida
+// js/results.js - Versão com a lógica do "Carteiro Cego"
 
 import { getLoserDestinationRound } from './math.js';
 
-// --- Funções Auxiliares Puras (internas a este módulo) ---
-function findMatchAndRoundIndex(rounds, matchId) {
-    if (!rounds) return { match: null, round: null, roundIndex: -1 };
-    for (let i = 0; i < rounds.length; i++) {
-        const round = rounds[i];
-        if (round) {
-            for (const match of round) {
-                if (match && match.id === matchId) { return { match, round, roundIndex: i }; }
+function findMatchInTournament(matchId, tournamentData) {
+    const allBrackets = tournamentData.type === 'single'
+        ? [tournamentData.rounds]
+        : [tournamentData.winnersBracket, tournamentData.losersBracket, tournamentData.grandFinal];
+    
+    for (const bracket of allBrackets) {
+        if (bracket) {
+            for (const round of bracket) {
+                if (round) {
+                    const match = round.find(m => m && m.id === matchId);
+                    if (match) return { match, bracket, bracketName: '' }; // Nome do bracket não é crucial aqui
+                }
             }
         }
-    }
-    return { match: null, round: null, roundIndex: -1 };
-}
-
-function findMatchInTournament(matchId, tournamentData) {
-    if (!tournamentData.type) return { match: null };
-    if (tournamentData.type === 'single') {
-        const result = findMatchAndRoundIndex(tournamentData.rounds, matchId);
-        return { ...result, bracket: tournamentData.rounds, bracketName: 'rounds' };
-    } else if (tournamentData.type === 'double') {
-        let result = findMatchAndRoundIndex(tournamentData.winnersBracket, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.winnersBracket, bracketName: 'winnersBracket' };
-        result = findMatchAndRoundIndex(tournamentData.losersBracket, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.losersBracket, bracketName: 'losersBracket' };
-        result = findMatchAndRoundIndex(tournamentData.grandFinal, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.grandFinal, bracketName: 'grandFinal' };
     }
     return { match: null };
 }
@@ -41,79 +29,92 @@ function _determineWinner(match) {
     else if (p2?.score === 'WO') { winner = p1; loser = p2; }
     else {
         const score1 = parseInt(p1?.score), score2 = parseInt(p2?.score);
-        if (!isNaN(score1) && !isNaN(score2)) {
+        if (!isNaN(score1) && !isNaN(score2) && score1 !== score2) {
             if (score1 > score2) { winner = p1; loser = p2; }
-            else if (score2 > score1) { winner = p2; loser = p1; }
+            else { winner = p2; loser = p1; }
         }
     }
     return { winner, loser };
 }
 
-function _advanceWinner(winner, matchInfo, data) {
-    const { match, bracket, roundIndex } = matchInfo;
-    const matchIndexInRound = bracket[roundIndex].findIndex(m => m && m.id === match.id);
+// **INÍCIO DA CORREÇÃO - LÓGICA DO "CARTEIRO CEGO"**
+function _advanceWinner(winner, sourceMatch, data) {
+    const placeholderName = `Winner of M${sourceMatch.id}`;
+    const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket, data.grandFinal];
     const winnerData = { ...winner };
     delete winnerData.score;
-    const nextRound = bracket[roundIndex + 1];
-    if (nextRound) {
-        const nextMatch = nextRound[Math.floor(matchIndexInRound / 2)];
-        if (nextMatch) {
-            if (matchIndexInRound % 2 === 0) { nextMatch.p1 = winnerData; }
-            else { nextMatch.p2 = winnerData; }
+
+    for (const bracket of allBrackets) {
+        for (const round of (bracket || [])) {
+            for (const match of (round || [])) {
+                if (match.p1?.name === placeholderName) {
+                    match.p1 = winnerData;
+                    return; // Encontrou e entregou, termina a busca
+                }
+                if (match.p2?.name === placeholderName) {
+                    match.p2 = winnerData;
+                    return;
+                }
+            }
         }
     }
 }
 
-function _dropLoser(loser, matchInfo, data) {
-    const { match, roundIndex } = matchInfo;
-    const vRound = roundIndex + 1;
-    const destPRound = getLoserDestinationRound(vRound);
-    const destRound = data.losersBracket[destPRound - 1];
-    if(destRound) {
-        const loserData = { ...loser };
-        delete loserData.score;
-        const placeholderName = `Loser of M${match.id}`;
-        for(const destMatch of destRound) {
-            if (destMatch.p1?.name === placeholderName) { destMatch.p1 = loserData; break; }
-            if (destMatch.p2?.name === placeholderName) { destMatch.p2 = loserData; break; }
+function _dropLoser(loser, sourceMatch, data) {
+    const placeholderName = `Loser of M${sourceMatch.id}`;
+    const allBrackets = [data.losersBracket]; // Perdedores só caem para a chave dos perdedores
+    const loserData = { ...loser };
+    delete loserData.score;
+    
+    for (const bracket of allBrackets) {
+        for (const round of (bracket || [])) {
+            for (const match of (round || [])) {
+                if (match.p1?.name === placeholderName) {
+                    match.p1 = loserData;
+                    return;
+                }
+                if (match.p2?.name === placeholderName) {
+                    match.p2 = loserData;
+                    return;
+                }
+            }
         }
     }
 }
+// **FIM DA CORREÇÃO**
 
-// --- Funções Principais Exportadas ---
+
 export function resolveMatch(tournamentData, matchId, scores) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
-    const matchInfo = findMatchInTournament(matchId, dataCopy);
-    if (!matchInfo.match) return dataCopy;
+    const { match } = findMatchInTournament(matchId, dataCopy);
+    if (!match) return dataCopy;
 
-    if (matchInfo.match.p1) matchInfo.match.p1.score = scores.p1;
-    if (matchInfo.match.p2) matchInfo.match.p2.score = scores.p2;
+    if (match.p1) match.p1.score = scores.p1;
+    if (match.p2) match.p2.score = scores.p2;
 
-    const { winner, loser } = _determineWinner(matchInfo.match);
+    const { winner, loser } = _determineWinner(match);
 
     if (winner) {
-        _advanceWinner(winner, matchInfo, dataCopy);
-        if (dataCopy.type === 'double' && matchInfo.bracketName === 'winnersBracket' && loser) {
-            _dropLoser(loser, matchInfo, dataCopy);
+        const bracketName = findMatchInTournament(matchId, dataCopy).bracketName;
+        _advanceWinner(winner, match, dataCopy);
+        if (dataCopy.type === 'double' && bracketName === 'winnersBracket' && loser) {
+            _dropLoser(loser, match, dataCopy);
         }
     }
     return dataCopy;
 }
 
-// **INÍCIO DA CORREÇÃO**
 export function resolveInitialByes(tournamentData) {
-// **FIM DA CORREÇÃO**
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
     const firstRound = (dataCopy.type === 'single') ? dataCopy.rounds[0] : dataCopy.winnersBracket[0];
     
     firstRound.forEach(match => {
         if (match && (match.p1?.isBye || match.p2?.isBye)) {
-            const matchInfo = findMatchInTournament(match.id, dataCopy);
             const { winner, loser } = _determineWinner(match);
             if(winner) {
-                _advanceWinner(winner, matchInfo, dataCopy);
+                _advanceWinner(winner, match, dataCopy);
                 if (dataCopy.type === 'double' && loser) {
-                    _dropLoser(loser, matchInfo, dataCopy);
+                    _dropLoser(loser, match, dataCopy);
                 }
             }
         }
