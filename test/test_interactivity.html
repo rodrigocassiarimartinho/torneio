@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste do Módulo de Interatividade</title>
+</head>
+<body>
+    <h1>Abra a consola (F12) para ver os resultados dos testes.</h1>
+
+    <div id="app-container">
+        <div class="match" data-match-id="1">
+            <select class="score-select" data-match-id="1" data-player-slot="p1">
+                <option value="--">--</option>
+                <option value="7">7</option>
+            </select>
+            <select class="score-select" data-match-id="1" data-player-slot="p2">
+                <option value="--">--</option>
+                <option value="5">5</option>
+            </select>
+        </div>
+    </div>
+
+    <script type="module">
+        import { setupInteractivity } from './js/interactivity.js';
+        
+        console.log("%c--- INICIANDO TESTE DE INTERATIVIDADE ---", "font-size: 1.5em; font-weight: bold;");
+
+        // --- DADOS E FUNÇÕES MOCK (SIMULADAS) ---
+        let mockTournamentData = {
+            type: 'single',
+            rounds: [[{ id: 1, p1: { name: 'Ana' }, p2: { name: 'Bia' } }]]
+        };
+        
+        const getMockData = () => mockTournamentData;
+        const setMockData = (newData) => {
+            mockTournamentData = newData;
+            console.log("%c✔️ SUCESSO: O estado foi atualizado!", "color: green; font-weight: bold;", newData);
+        };
+        const mockFullRender = () => {
+            console.log("%c✔️ SUCESSO: A função de renderização foi chamada.", "color: green; font-weight: bold;");
+        };
+
+        // --- O TESTE ---
+        // 1. Configura a interatividade no nosso mini-DOM
+        setupInteractivity(getMockData, setMockData, mockFullRender);
+
+        // 2. Simula a ação do utilizador
+        console.log("A simular a seleção de um placar...");
+        const selectP1 = document.querySelector('[data-player-slot="p1"]');
+        selectP1.value = '7';
+        selectP1.dispatchEvent(new Event('change', { bubbles: true }));
+
+    </script>
+</body>
+</html>
