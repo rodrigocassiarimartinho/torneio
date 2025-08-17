@@ -1,4 +1,4 @@
-// js/results.js - Versão com lógica de estado "pura" e resolução de byes
+// js/results.js - Versão com a exportação corrigida
 
 import { getLoserDestinationRound } from './math.js';
 
@@ -100,7 +100,9 @@ export function resolveMatch(tournamentData, matchId, scores) {
     return dataCopy;
 }
 
+// **INÍCIO DA CORREÇÃO**
 export function resolveInitialByes(tournamentData) {
+// **FIM DA CORREÇÃO**
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
     const firstRound = (dataCopy.type === 'single') ? dataCopy.rounds[0] : dataCopy.winnersBracket[0];
     
