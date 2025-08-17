@@ -4,6 +4,7 @@ body {
     background-color: #f0f2f5;
     margin: 0;
     padding: 2rem;
+    box-sizing: border-box; /* Adicionado para garantir consistência */
 }
 
 h1, h2 {
@@ -90,37 +91,37 @@ textarea {
 .tournament-type-selector input[type="radio"] { display: none; }
 .tournament-type-selector input[type="radio"]:checked + label { background-color: #041A4A; color: #fff; border-color: #041A4A; }
 
-/* **INÍCIO DA CORREÇÃO** */
 .main-content {
     display: flex;
-    justify-content: center; /* Centraliza a coluna de chaves */
+    justify-content: center;
 }
 
 .brackets-column {
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
-    width: 100%; /* Permite que a coluna ocupe o espaço */
+    width: 100%;
 }
-/* A CLASSIFICATION-COLUMN FOI REMOVIDA */
-/* **FIM DA CORREÇÃO** */
 
-
+/* **INÍCIO DA CORREÇÃO** */
 #winners-bracket-container, #losers-bracket-container, #grand-final-container {
     background-color: #fff;
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.05);
     width: 100%;
     overflow-x: auto;
-    padding: 20px;
-    box-sizing: border-box; /* Garante que o padding não aumente a largura */
+    padding-top: 20px; /* Mantém o espaço para o título */
+    /* REMOVIDO o padding lateral que causava o overflow */
 }
 
 .bracket-wrapper {
     position: relative;
     width: fit-content;
     margin: 0; 
+    padding: 20px; /* O padding agora está apenas aqui */
+    padding-top: 0;
 }
+/* **FIM DA CORREÇÃO** */
 
 .bracket-matches { display: flex; position: relative; }
 .round { position: relative; flex-shrink: 0; }
