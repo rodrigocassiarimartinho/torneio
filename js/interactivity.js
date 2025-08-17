@@ -2,6 +2,25 @@
 
 import { resolveMatch } from './results.js';
 
+// Função auxiliar para encontrar a partida na estrutura de dados
+function findMatchInTournament(matchId, tournamentData) {
+    const allBrackets = tournamentData.type === 'single'
+        ? [tournamentData.rounds]
+        : [tournamentData.winnersBracket, tournamentData.losersBracket, tournamentData.grandFinal];
+    
+    for (const bracket of allBrackets) {
+        if (bracket) {
+            for (const round of bracket) {
+                if (round) {
+                    const match = round.find(m => m && m.id === matchId);
+                    if (match) return match;
+                }
+            }
+        }
+    }
+    return null;
+}
+
 // Função auxiliar para verificar se uma partida tem um resultado final
 function isMatchComplete(match) {
     if (!match || !match.p1 || !match.p2) return false;
@@ -30,18 +49,7 @@ export function setupInteractivity(getTournamentData, setTournamentData, fullRen
         const matchEl = selectEl.closest('.match');
 
         let currentData = getTournamentData();
-        
-        // Encontra a partida para atualizar
-        const allBrackets = currentData.type === 'single' ? [currentData.rounds] : [currentData.winnersBracket, currentData.losersBracket, currentData.grandFinal];
-        let targetMatch = null;
-        for (const bracket of allBrackets) {
-            for (const round of (bracket || [])) {
-                targetMatch = (round || []).find(m => m && m.id === matchId);
-                if (targetMatch) break;
-            }
-            if(targetMatch) break;
-        }
-
+        const targetMatch = findMatchInTournament(matchId, currentData);
         if (!targetMatch) return;
 
         // 1. Atualiza o placar na estrutura de dados
@@ -59,8 +67,7 @@ export function setupInteractivity(getTournamentData, setTournamentData, fullRen
             setTournamentData(newData);
             
             // 5. Chama o render novamente com o estado atualizado
-            // Usamos um setTimeout para garantir que o primeiro render termine
-            setTimeout(() => fullRender(), 100);
+            setTimeout(() => fullRender(), 50); // Pequeno delay para garantir que o primeiro render termine
         }
     };
 
