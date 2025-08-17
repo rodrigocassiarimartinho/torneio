@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <title>Teste do Módulo de Resultados</title>
     <style>
-        /* ... (estilos do teste anterior) ... */
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
+        .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; }
+        h1, h2, h3 { color: #041A4A; }
+        .state-container { display: flex; gap: 2rem; }
+        .state { flex: 1; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-size: 12px; }
+        .success { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -26,30 +33,42 @@
         let structure = buildDoubleBracketStructure(playerCount);
         let tournamentData = { type: 'double', ...populateDoubleBracket(structure, playerList) };
 
-        const initialState = JSON.parse(JSON.stringify(tournamentData));
-        const finalStateObtained = resolveInitialByes(initialState);
+        // --- TESTE 1: Resolução Automática dos Byes ---
+        const initialStateByes = JSON.parse(JSON.stringify(tournamentData));
+        const stateAfterByes = resolveInitialByes(initialStateByes);
         
-        // **GABARITO: O ESTADO QUE ESPERAMOS OBTER**
-        const expectedState = JSON.parse(JSON.stringify(initialState));
-        expectedState.winnersBracket[1][0].p1 = { name: 'Ana', seed: 1, isBye: false };
-        expectedState.winnersBracket[1][1].p2 = { name: 'Bia', seed: 2, isBye: false };
-        const bye1 = initialState.winnersBracket[0].find(m => m.p1?.isBye || m.p2?.isBye).p2;
-        const bye2 = initialState.winnersBracket[0].find(m => m.p1?.isBye || m.p2?.isBye, 1).p2;
-        expectedState.losersBracket[0][0].p1 = bye1;
-        expectedState.losersBracket[0][1].p1 = bye2;
-
-
-        let html = `<div class="test-case"><h2>Teste de Resolução de Byes</h2>`;
-        const success = JSON.stringify(finalStateObtained) === JSON.stringify(expectedState);
-        html += success ? `<p class="success">✔️ SUCESSO</p>` : `<p class="fail">❌ FALHA</p>`;
+        let byeTestHtml = `<div class="test-case"><h2>Teste 1: Resolução Automática dos Byes</h2>`;
+        const anaInV2 = stateAfterByes.winnersBracket[1][0].p1.name === 'Ana';
+        const biaInV2 = stateAfterByes.winnersBracket[1][1].p2.name === 'Bia';
+        const byeLoserInP1 = stateAfterByes.losersBracket[0].find(m => m.p1?.isBye || m.p2?.isBye);
         
-        html += `<div class="state-container">`;
-        html += `<div class="state"><h3>Estado Inicial</h3><pre>${JSON.stringify(initialState, null, 2)}</pre></div>`;
-        html += `<div class="state"><h3>Estado Final (Esperado)</h3><pre>${JSON.stringify(expectedState, null, 2)}</pre></div>`;
-        html += `<div class="state"><h3>Estado Final (Obtido)</h3><pre>${JSON.stringify(finalStateObtained, null, 2)}</pre></div>`;
-        html += `</div></div>`;
-        resultsContainer.innerHTML += html;
+        if (anaInV2 && biaInV2 && byeLoserInP1) {
+            byeTestHtml += `<p class="success">✔️ SUCESSO: Byes resolvidos e avançados corretamente.</p>`;
+        } else {
+            byeTestHtml += `<p class="fail">❌ FALHA: A resolução de byes falhou.</p>`;
+        }
+        byeTestHtml += `<div class="state-container"><div class="state"><h3>Estado Inicial</h3><pre>${JSON.stringify(initialStateByes, null, 2)}</pre></div>`;
+        byeTestHtml += `<div class="state"><h3>Estado Final (Pós-Byes)</h3><pre>${JSON.stringify(stateAfterByes, null, 2)}</pre></div></div></div>`;
+        resultsContainer.innerHTML += byeTestHtml;
 
+
+        // --- TESTE 2: Resolução de Partida Manual ---
+        const matchToUpdate = stateAfterByes.winnersBracket[0].find(m => m.p1?.name === 'Carlos' || m.p2?.name === 'Carlos');
+        const matchIdToUpdate = matchToUpdate.id;
+        const finalState = resolveMatch(stateAfterByes, matchIdToUpdate, { p1: '7', p2: '4' });
+        
+        let matchTestHtml = `<div class="test-case"><h2>Teste 2: Resolução de Partida Manual (Carlos 7 vs. Fabio 4)</h2>`;
+        const carlosInV2 = finalState.winnersBracket[1][1].p2.name === 'Carlos';
+        const fabioInLosers = finalState.losersBracket[0].find(m => m.p1?.name === 'Fabio' || m.p2?.name === 'Fabio');
+
+        if (carlosInV2 && fabioInLosers) {
+            matchTestHtml += `<p class="success">✔️ SUCESSO: Resolução de partida manual funcionou.</p>`;
+        } else {
+            matchTestHtml += `<p class="fail">❌ FALHA: A resolução de partida manual falhou.</p>`;
+        }
+        matchTestHtml += `<div class="state-container"><div class="state"><h3>Estado Inicial (Pós-Byes)</h3><pre>${JSON.stringify(stateAfterByes, null, 2)}</pre></div>`;
+        matchTestHtml += `<div class="state"><h3>Estado Final</h3><pre>${JSON.stringify(finalState, null, 2)}</pre></div></div></div>`;
+        resultsContainer.innerHTML += matchTestHtml;
     </script>
 </body>
 </html>
