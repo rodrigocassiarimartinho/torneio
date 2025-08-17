@@ -12,9 +12,20 @@ const CONFIG = {
 };
 
 function createMatchSVG(matchData) {
+    // **LÓGICA DA CAIXA DO CAMPEÃO**
+    if (matchData.isChampionBox) {
+        const p1 = { name: '(Vazio)', ...matchData.p1 };
+        return `
+            <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+                <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#041A4A" stroke="#D9A42A" stroke-width="1"/>
+                <text x="${CONFIG.SVG_WIDTH / 2}" y="22" dominant-baseline="middle" text-anchor="middle" class="svg-text-name" fill="#FFFFFF" font-weight="bold">Campeão</text>
+                <text x="${CONFIG.SVG_WIDTH / 2}" y="48" dominant-baseline="middle" text-anchor="middle" class="svg-text-name" fill="#FFFFFF">${p1.name}</text>
+            </svg>`;
+    }
+
     const p1_Y = 18, p2_Y = 47;
-    let p1 = { name: 'BYE', seed: null, ...matchData.p1 };
-    let p2 = { name: 'BYE', seed: null, ...matchData.p2 };
+    let p1 = { name: '(Vazio)', seed: null, ...matchData.p1 };
+    let p2 = { name: '(Vazio)', seed: null, ...matchData.p2 };
 
     if (p1.isBye) p1.name = 'BYE';
     if (p2.isBye) p2.name = 'BYE';
@@ -27,12 +38,12 @@ function createMatchSVG(matchData) {
     const seed1HTML = p1.seed ? `<text x="${seedX}" y="${p1_Y}" dominant-baseline="middle" class="svg-text-seed" fill="#041A4A">[${p1.seed}]</text>` : '';
     const seed2HTML = p2.seed ? `<text x="${seedX}" y="${p2_Y}" dominant-baseline="middle" class="svg-text-seed" fill="#041A4A">[${p2.seed}]</text>` : '';
     
-    const name1Class = (p1.isPlaceholder || p1.name === 'BYE') ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
-    const name2Class = (p2.isPlaceholder || p2.name === 'BYE') ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
+    const name1Class = (p1.isPlaceholder || p1.name === 'BYE' || p1.name === '(Vazio)') ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
+    const name2Class = (p2.isPlaceholder || p2.name === 'BYE' || p2.name === '(Vazio)') ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
 
     let scoreOptions = `<option value="--">--</option><option value="WO">WO</option>`;
     for(let i = 0; i <= 31; i++) { scoreOptions += `<option value="${i}">${i}</option>`; }
-    const isDisabled = name1Class.includes('placeholder') || name2Class.includes('placeholder') || p1.name === 'BYE' || p2.name === 'BYE';
+    const isDisabled = name1Class.includes('placeholder') || name2Class.includes('placeholder');
 
     const scoreInput1 = `<foreignObject x="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 7}" y="${p1_Y - CONFIG.SCORE_BOX_HEIGHT/2}" width="${CONFIG.SCORE_BOX_WIDTH}" height="${CONFIG.SCORE_BOX_HEIGHT}"><select class="score-select" data-match-id="${matchData.id}" data-player-slot="p1" ${isDisabled ? 'disabled' : ''}>${scoreOptions}</select></foreignObject>`;
     const scoreInput2 = `<foreignObject x="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 7}" y="${p2_Y - CONFIG.SCORE_BOX_HEIGHT/2}" width="${CONFIG.SCORE_BOX_WIDTH}" height="${CONFIG.SCORE_BOX_HEIGHT}"><select class="score-select" data-match-id="${matchData.id}" data-player-slot="p2" ${isDisabled ? 'disabled' : ''}>${scoreOptions}</select></foreignObject>`;
@@ -44,12 +55,7 @@ function layoutBracket(targetSelector) {
     const matchesContainer = document.querySelector(targetSelector);
     if (!matchesContainer) return;
     const rounds = Array.from(matchesContainer.querySelectorAll('.round'));
-    if (rounds.length === 0 || rounds[0].children.length === 0) {
-        matchesContainer.style.height = 'auto';
-        const wrapperEl = matchesContainer.closest('.bracket-wrapper');
-        if(wrapperEl) wrapperEl.style.height = 'auto';
-        return;
-    };
+    if (rounds.length === 0 || rounds[0].children.length === 0) { return; };
     
     const blockHeight = CONFIG.SVG_HEIGHT + CONFIG.VERTICAL_GAP;
     const firstRoundMatchCount = rounds[0].children.length;
@@ -148,33 +154,20 @@ export function runLayoutAndDraw(targetSelector, roundsData) {
     layoutBracket(targetSelector);
     window.requestAnimationFrame(() => {
         drawConnectors(targetSelector);
-        updateDropdownValues(roundsData, targetSelector);
-    });
-}
-
-function updateDropdownValues(roundsData, targetSelector) {
-    if(!roundsData) return;
-    const container = document.querySelector(targetSelector);
-    if(!container) return;
-    const allMatches = roundsData.flat();
-    const selects = container.querySelectorAll('.score-select');
-    selects.forEach(select => {
-        const matchId = parseInt(select.dataset.matchId);
-        const playerSlot = select.dataset.playerSlot;
-        const match = allMatches.find(m => m && m.id === matchId);
-        if (match && match[playerSlot] && match[playerSlot].score !== undefined) {
-            select.value = match[playerSlot].score;
-        } else {
-            select.value = "--";
-        }
+        // A função de update dos placares será reativada na etapa de interatividade
     });
 }
 
 export function renderBracket(roundsData, targetSelector) {
     const container = document.querySelector(targetSelector);
-    if (!container) return;
+    if (!container) {
+        console.error("Container de renderização não encontrado:", targetSelector);
+        return;
+    }
     container.innerHTML = '';
+    
     if (!roundsData || roundsData.length === 0) return;
+
     roundsData.forEach(roundData => {
         const roundEl = document.createElement('div');
         roundEl.className = 'round';
@@ -188,5 +181,6 @@ export function renderBracket(roundsData, targetSelector) {
         });
         container.appendChild(roundEl);
     });
+    
     runLayoutAndDraw(targetSelector, roundsData);
 }
