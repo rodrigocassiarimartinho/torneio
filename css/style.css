@@ -1,4 +1,4 @@
-/* CSS com a correção de alinhamento responsivo final */
+/* CSS Final e Otimizado */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f2f5;
@@ -83,7 +83,6 @@ textarea {
     color: #FFFFFF;
 }
 
-
 .tournament-type-selector { margin-bottom: 1.5rem; }
 .tournament-type-selector p { margin: 0 0 0.75rem 0; font-weight: 500; color: #333; }
 .tournament-type-selector div { display: inline-block; margin: 0 10px; }
@@ -91,24 +90,21 @@ textarea {
 .tournament-type-selector input[type="radio"] { display: none; }
 .tournament-type-selector input[type="radio"]:checked + label { background-color: #041A4A; color: #fff; border-color: #041A4A; }
 
+/* **INÍCIO DA CORREÇÃO** */
 .main-content {
     display: flex;
-    align-items: flex-start;
-    gap: 2rem;
+    justify-content: center; /* Centraliza a coluna de chaves */
 }
 
 .brackets-column {
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
-    flex-grow: 1;
-    min-width: 0; /* **ESTA É A CORREÇÃO CRUCIAL** */
+    width: 100%; /* Permite que a coluna ocupe o espaço */
 }
+/* A CLASSIFICATION-COLUMN FOI REMOVIDA */
+/* **FIM DA CORREÇÃO** */
 
-.classification-column {
-    width: 350px;
-    flex-shrink: 0;
-}
 
 #winners-bracket-container, #losers-bracket-container, #grand-final-container {
     background-color: #fff;
@@ -117,12 +113,13 @@ textarea {
     width: 100%;
     overflow-x: auto;
     padding: 20px;
+    box-sizing: border-box; /* Garante que o padding não aumente a largura */
 }
 
 .bracket-wrapper {
     position: relative;
     width: fit-content;
-    margin: 0;
+    margin: 0; 
 }
 
 .bracket-matches { display: flex; position: relative; }
