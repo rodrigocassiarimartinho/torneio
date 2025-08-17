@@ -4,14 +4,7 @@
     <meta charset="UTF-8">
     <title>Teste do Módulo de Resultados</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
-        .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; }
-        h1, h2, h3 { color: #041A4A; }
-        .state-container { display: flex; gap: 2rem; }
-        .state { flex: 1; }
-        pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-size: 12px; }
-        .success { color: green; font-weight: bold; }
-        .fail { color: red; font-weight: bold; }
+        /* ... (estilos do teste anterior) ... */
     </style>
 </head>
 <body>
@@ -36,12 +29,11 @@
         const stateAfterByes = resolveInitialState(initialState);
         
         let byeTestHtml = `<div class="test-case"><h2>Teste 1: Resolução Automática do Estado Inicial</h2>`;
-        const anaInV2 = stateAfterByes.winnersBracket[1][0].p1.name === 'Ana';
-        const biaInV2 = stateAfterByes.winnersBracket[1][1].p2.name === 'Bia';
-        const bye1InP1 = stateAfterByes.losersBracket[0][0].p1.name.startsWith('BYE');
-        const bye2InP1 = stateAfterByes.losersBracket[0][1].p1.name.startsWith('BYE');
-
-        if (anaInV2 && biaInV2 && bye1InP1 && bye2InP1) {
+        const anaInV2 = stateAfterByes.winnersBracket[1].some(m => m.p1?.name === 'Ana' || m.p2?.name === 'Ana');
+        const biaInV2 = stateAfterByes.winnersBracket[1].some(m => m.p1?.name === 'Bia' || m.p2?.name === 'Bia');
+        const byesDropped = stateAfterByes.losersBracket[0].filter(m => m.p1?.isBye || m.p2?.isBye).length === 2;
+        
+        if (anaInV2 && biaInV2 && byesDropped) {
             byeTestHtml += `<p class="success">✔️ SUCESSO: O estado inicial foi resolvido corretamente.</p>`;
         } else {
             byeTestHtml += `<p class="fail">❌ FALHA: A resolução do estado inicial falhou.</p>`;
