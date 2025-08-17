@@ -1,5 +1,5 @@
 // js/structures/double_bracket_structure.js
-import * as TMath from '../tournamentMath.js';
+import * as TMath from '../math.js';
 
 export function buildDoubleBracketStructure(n_original) {
     const bracketSize = TMath.getNextPowerOfTwo(n_original);
