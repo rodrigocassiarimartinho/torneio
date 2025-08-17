@@ -1,7 +1,7 @@
-// js/results.js - Versão com a lógica de clonagem corrigida
-
+// js/results.js
 import { getLoserDestinationRound } from './math.js';
 
+// --- Funções Auxiliares Puras (internas a este módulo) ---
 function findMatchAndRoundIndex(rounds, matchId) {
     if (!rounds) return { match: null, round: null, roundIndex: -1 };
     for (let i = 0; i < rounds.length; i++) {
@@ -52,7 +52,7 @@ function _advanceWinner(winner, matchInfo, data) {
     const { match, bracket, roundIndex } = matchInfo;
     const matchIndexInRound = bracket[roundIndex].findIndex(m => m && m.id === match.id);
     const winnerData = { ...winner }; // Clone completo
-    delete winnerData.score; // Remove o placar para a próxima partida
+    delete winnerData.score;
     const nextRound = bracket[roundIndex + 1];
     if (nextRound) {
         const nextMatch = nextRound[Math.floor(matchIndexInRound / 2)];
@@ -79,6 +79,7 @@ function _dropLoser(loser, matchInfo, data) {
     }
 }
 
+// --- Funções Principais Exportadas ---
 export function resolveMatch(tournamentData, matchId, scores) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
     const matchInfo = findMatchInTournament(matchId, dataCopy);
@@ -106,6 +107,7 @@ export function resolveInitialByes(tournamentData) {
         if (match && (match.p1?.isBye || match.p2?.isBye)) {
             const matchInfo = findMatchInTournament(match.id, dataCopy);
             const { winner, loser } = _determineWinner(match);
+
             if(winner) {
                 _advanceWinner(winner, matchInfo, dataCopy);
                 if (dataCopy.type === 'double' && loser) {
