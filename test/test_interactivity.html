@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
     <title>Teste do Módulo de Interatividade</title>
 </head>
 <body>
     <h1>Abra a consola (F12) para ver os resultados dos testes.</h1>
-
     <div id="app-container">
         <div class="match" data-previous-value="--">
             <select class="score-select" data-match-id="1" data-player-slot="p1">
@@ -23,29 +21,46 @@
     <script type="module">
         import { setupInteractivity } from '../js/interactivity.js';
         
-        // Mocks (simulações) dos outros módulos
-        let mockTournamentData = { type: 'single', rounds: [[{ id: 1, p1: { name: 'Ana' }, p2: { name: 'Bia' } }]] };
-        
-        const getMockData = () => mockTournamentData;
-        const setMockData = (newData) => {
-            console.log("%c✔️ SUCESSO: O estado foi atualizado!", "color: green; font-weight: bold;");
-            mockTournamentData = newData;
-        };
-        const mockFullRender = () => {
-            console.log("%c✔️ SUCESSO: A função de renderização foi chamada.", "color: green; font-weight: bold;");
-        };
-
         console.log("%c--- INICIANDO TESTE DE INTERATIVIDADE ---", "font-size: 1.5em; font-weight: bold;");
 
-        // 1. "Liga" a interatividade
+        let mockTournamentData = {
+            type: 'single',
+            rounds: [
+                [{ id: 1, p1: { name: 'Ana' }, p2: { name: 'Bia' } }],
+                [{ id: 2, p1: { name: 'Winner of M1' }, p2: null }]
+            ]
+        };
+        
+        const getMockData = () => mockTournamentData;
+        const setMockData = (newData) => { mockTournamentData = newData; };
+        
+        let renderCallCount = 0;
+        const mockFullRender = () => {
+            renderCallCount++;
+            console.log(`SUCESSO: A função de renderização foi chamada (Vez ${renderCallCount}).`);
+        };
+
         setupInteractivity(getMockData, setMockData, mockFullRender);
 
-        // 2. Simula a ação do utilizador
         console.log("A simular a seleção de um placar...");
         const selectP1 = document.querySelector('[data-player-slot="p1"]');
         selectP1.value = '7';
         selectP1.dispatchEvent(new Event('change', { bubbles: true }));
 
+        setTimeout(() => {
+            const selectP2 = document.querySelector('[data-player-slot="p2"]');
+            selectP2.value = '5';
+            selectP2.dispatchEvent(new Event('change', { bubbles: true }));
+
+            setTimeout(() => {
+                 console.assert(renderCallCount >= 2, "FALHA: A função de renderização não foi chamada o número esperado de vezes.");
+                 const winnerInNextRound = mockTournamentData.rounds[1][0].p1.name === 'Ana';
+                 console.assert(winnerInNextRound, "FALHA: O vencedor não avançou corretamente.");
+                 if(winnerInNextRound && renderCallCount >= 2) {
+                     console.log("%c✔️ SUCESSO: O fluxo de interatividade completo funcionou.", "color: green");
+                 }
+            }, 500);
+        }, 500);
     </script>
 </body>
 </html>
