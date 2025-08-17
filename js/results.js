@@ -16,8 +16,8 @@ function findMatchAndRoundIndex(rounds, matchId) {
 }
 
 function findMatchInTournament(matchId, tournamentData) {
-    if (!tournamentData.type) return { match: null };
     const data = tournamentData.type === 'single' ? { rounds: tournamentData.rounds, type: 'single' } : tournamentData;
+    if (!data) return { match: null };
 
     if (data.rounds) {
         const result = findMatchAndRoundIndex(data.rounds, matchId);
@@ -41,10 +41,9 @@ function findMatchInTournament(matchId, tournamentData) {
 function _determineWinner(match) {
     let winner = null, loser = null;
     const p1 = match.p1, p2 = match.p2;
-    if (p1?.isBye) { winner = p2; loser = p1; }
-    else if (p2?.isBye) { winner = p1; loser = p2; }
+    // Hierarquia de regras baseada apenas no placar, como definido
+    if (p2?.score === 'WO') { winner = p1; loser = p2; }
     else if (p1?.score === 'WO') { winner = p2; loser = p1; }
-    else if (p2?.score === 'WO') { winner = p1; loser = p2; }
     else {
         const score1 = parseInt(p1?.score), score2 = parseInt(p2?.score);
         if (!isNaN(score1) && !isNaN(score2) && score1 !== score2) {
@@ -92,9 +91,13 @@ function _defineAutomaticScores(data) {
     allBrackets.forEach(bracket => {
         (bracket || []).forEach(round => {
             (round || []).forEach(match => {
-                if (!match || (match.p1 && match.p2)) return; // Partida completa ou vazia
-                if (match.p1?.isBye && !match.p1.score) { match.p1.score = 'WO'; changed = true; }
-                if (match.p2?.isBye && !match.p2.score) { match.p2.score = 'WO'; changed = true; }
+                if (match && (!match.p1?.score && !match.p2?.score)) { // Se a partida ainda não tem placar
+                    const p1 = match.p1;
+                    const p2 = match.p2;
+                    if (p1?.isBye && p2?.isBye) { match.p2.score = 'WO'; changed = true; } // Bye vs Bye, p2 perde
+                    else if (p1?.isBye) { match.p1.score = 'WO'; changed = true; }
+                    else if (p2?.isBye) { match.p2.score = 'WO'; changed = true; }
+                }
             });
         });
     });
@@ -110,9 +113,8 @@ function _calculateResultsAndAdvancePlayers(data) {
                 if (match && (match.p1?.score || match.p2?.score) && !match.winner) {
                     const { winner, loser } = _determineWinner(match);
                     if (winner) {
-                        match.winner = winner; // Marca a partida como resolvida
-                        const matchInfo = { match, bracket, roundIndex, bracketName: '' }; // O nome do bracket será preenchido
-                        if (data.type === 'double' && data.winnersBracket === bracket) matchInfo.bracketName = 'winnersBracket';
+                        match.winner = winner.name; // Marca a partida como resolvida
+                        const matchInfo = findMatchInTournament(match.id, data);
                         _advanceWinner(winner, matchInfo, data);
                         if (data.type === 'double' && matchInfo.bracketName === 'winnersBracket' && loser) {
                             _dropLoser(loser, matchInfo, data);
@@ -126,11 +128,9 @@ function _calculateResultsAndAdvancePlayers(data) {
     return changed;
 }
 
-
-// --- A Função Principal Exportada ---
 function _runResolutionLoop(tournamentData) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
-    let changedInLoop = false;
+    let changedInLoop;
     do {
         const scoresChanged = _defineAutomaticScores(dataCopy);
         const resultsChanged = _calculateResultsAndAdvancePlayers(dataCopy);
