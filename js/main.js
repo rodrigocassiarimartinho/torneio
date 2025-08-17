@@ -48,20 +48,12 @@ function startTournament() {
     if (tournamentType === 'single') {
         const structure = buildSingleBracketStructure(playerCount);
         populatedBracket = populateSingleBracket(structure, playerInput);
-        // **INÍCIO DA CORREÇÃO**
-        // Monta o objeto de dados completo ANTES de o passar para qualquer outra função
-        populatedBracket.type = 'single';
-        // **FIM DA CORREÇÃO**
     } else {
         const structure = buildDoubleBracketStructure(playerCount);
         populatedBracket = populateDoubleBracket(structure, playerInput);
-        // **INÍCIO DA CORREÇÃO**
-        // Monta o objeto de dados completo ANTES de o passar para qualquer outra função
-        populatedBracket.type = 'double';
-        // **FIM DA CORREÇÃO**
     }
     
-    // Resolve os byes iniciais no estado já populado
+    // Resolve os byes iniciais antes de definir o estado final
     const finalInitialState = resolveInitialByes(populatedBracket);
     setTournamentData(finalInitialState);
     
@@ -90,7 +82,6 @@ function fullRender() {
         renderBracket(currentTournamentData.grandFinal, '#final-bracket-matches');
     }
 }
-
 
 // --- INICIALIZAÇÃO ---
 document.getElementById('generate-btn').addEventListener('click', startTournament);
