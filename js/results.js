@@ -1,7 +1,7 @@
-// js/results.js
+// js/results.js - Versão com a lógica de clonagem corrigida
+
 import { getLoserDestinationRound } from './math.js';
 
-// --- Funções Auxiliares Puras (internas a este módulo) ---
 function findMatchAndRoundIndex(rounds, matchId) {
     if (!rounds) return { match: null, round: null, roundIndex: -1 };
     for (let i = 0; i < rounds.length; i++) {
@@ -79,17 +79,13 @@ function _dropLoser(loser, matchInfo, data) {
     }
 }
 
-// --- Funções Principais Exportadas ---
 export function resolveMatch(tournamentData, matchId, scores) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
     const matchInfo = findMatchInTournament(matchId, dataCopy);
     if (!matchInfo.match) return dataCopy;
-
     if (matchInfo.match.p1) matchInfo.match.p1.score = scores.p1;
     if (matchInfo.match.p2) matchInfo.match.p2.score = scores.p2;
-
     const { winner, loser } = _determineWinner(matchInfo.match);
-
     if (winner) {
         _advanceWinner(winner, matchInfo, dataCopy);
         if (dataCopy.type === 'double' && matchInfo.bracketName === 'winnersBracket' && loser) {
@@ -107,7 +103,6 @@ export function resolveInitialByes(tournamentData) {
         if (match && (match.p1?.isBye || match.p2?.isBye)) {
             const matchInfo = findMatchInTournament(match.id, dataCopy);
             const { winner, loser } = _determineWinner(match);
-
             if(winner) {
                 _advanceWinner(winner, matchInfo, dataCopy);
                 if (dataCopy.type === 'double' && loser) {
