@@ -45,20 +45,20 @@ function startTournament() {
     mainBracketTitle.textContent = 'Chave dos Vencedores';
     
     // Orquestração da criação da chave
-    let populatedBracket;
+    let initialData;
     if (tournamentType === 'single') {
         const structure = buildSingleBracketStructure(playerCount);
-        populatedBracket = populateSingleBracket(structure, playerInput);
+        initialData = populateSingleBracket(structure, playerInput);
+        initialData.type = 'single'; // Adiciona a "etiqueta" de tipo
     } else {
         const structure = buildDoubleBracketStructure(playerCount);
-        populatedBracket = populateDoubleBracket(structure, playerInput);
+        initialData = populateDoubleBracket(structure, playerInput);
+        initialData.type = 'double'; // Adiciona a "etiqueta" de tipo
     }
     
-    // **INÍCIO DA CORREÇÃO**
-    // Resolve os byes iniciais ANTES de definir o estado final
-    const finalInitialState = resolveInitialByes(populatedBracket);
+    // Resolve os byes iniciais no estado já populado e etiquetado
+    const finalInitialState = resolveInitialByes(initialData);
     setTournamentData(finalInitialState);
-    // **FIM DA CORREÇÃO**
     
     fullRender();
 }
