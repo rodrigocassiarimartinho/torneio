@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <meta charset="UTF-8">
     <title>Teste do Módulo de Interatividade</title>
 </head>
 <body>
@@ -42,13 +43,17 @@
 
         setupInteractivity(getMockData, setMockData, mockFullRender);
 
+        // --- TESTE ---
         console.log("A simular a seleção de um placar...");
         const selectP1 = document.querySelector('[data-player-slot="p1"]');
+        const selectP2 = document.querySelector('[data-player-slot="p2"]');
+
+        // Simula a entrada do primeiro placar
         selectP1.value = '7';
         selectP1.dispatchEvent(new Event('change', { bubbles: true }));
 
         setTimeout(() => {
-            const selectP2 = document.querySelector('[data-player-slot="p2"]');
+            // Simula a entrada do segundo placar
             selectP2.value = '5';
             selectP2.dispatchEvent(new Event('change', { bubbles: true }));
 
