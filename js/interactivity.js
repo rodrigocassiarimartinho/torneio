@@ -1,16 +1,25 @@
-// js/interactivity.js
+// js/interactivity.js - Versão com a sua arquitetura de interatividade final
+
 import { resolveMatch } from './results.js';
 
-// A função que será chamada pelo "Maestro" (main.js) para "ligar" os eventos
+// Função auxiliar para verificar se uma partida tem um resultado final
+function isMatchComplete(match) {
+    if (!match || !match.p1 || !match.p2) return false;
+    if (match.p1.score === 'WO' || match.p2.score === 'WO') return true;
+    
+    const score1 = parseInt(match.p1.score);
+    const score2 = parseInt(match.p2.score);
+    
+    return !isNaN(score1) && !isNaN(score2);
+}
+
 export function setupInteractivity(getTournamentData, setTournamentData, fullRender) {
     const appContainer = document.getElementById('app-container');
 
-    // Remove qualquer listener antigo para evitar duplicação
     if (window.scoreUpdateHandler) {
         appContainer.removeEventListener('change', window.scoreUpdateHandler);
     }
 
-    // Cria um novo handler que tem acesso ao estado atual
     window.scoreUpdateHandler = (event) => {
         if (!event.target.classList.contains('score-select')) return;
 
@@ -18,30 +27,41 @@ export function setupInteractivity(getTournamentData, setTournamentData, fullRen
         const matchId = parseInt(selectEl.dataset.matchId);
         const playerSlot = selectEl.dataset.playerSlot;
         const newScore = selectEl.value;
-
-        const opponentSlot = playerSlot === 'p1' ? 'p2' : 'p1';
         const matchEl = selectEl.closest('.match');
-        const opponentSelect = matchEl ? matchEl.querySelector(`[data-player-slot="${opponentSlot}"]`) : null;
 
-        if (newScore === 'WO' && opponentSelect && opponentSelect.value === 'WO') {
-            alert("Apenas um jogador pode ser desclassificado (WO) por partida.");
-            selectEl.value = matchEl.dataset.previousValue || '--';
-            return;
+        let currentData = getTournamentData();
+        
+        // Encontra a partida para atualizar
+        const allBrackets = currentData.type === 'single' ? [currentData.rounds] : [currentData.winnersBracket, currentData.losersBracket, currentData.grandFinal];
+        let targetMatch = null;
+        for (const bracket of allBrackets) {
+            for (const round of (bracket || [])) {
+                targetMatch = (round || []).find(m => m && m.id === matchId);
+                if (targetMatch) break;
+            }
+            if(targetMatch) break;
         }
 
-        matchEl.dataset.previousValue = selectEl.value;
-        
-        const scores = {};
-        scores[playerSlot] = newScore;
-        scores[opponentSlot] = opponentSelect ? opponentSelect.value : '--';
+        if (!targetMatch) return;
 
-        // Obtém o estado atual, chama o módulo de resultados, e atualiza o estado
-        const currentData = getTournamentData();
-        const newData = resolveMatch(currentData, matchId, scores);
-        setTournamentData(newData);
+        // 1. Atualiza o placar na estrutura de dados
+        if (!targetMatch[playerSlot]) targetMatch[playerSlot] = {};
+        targetMatch[playerSlot].score = newScore;
         
-        // Pede ao "Maestro" para redesenhar tudo
+        // 2. Chama o render para exibir a mudança de placar
         fullRender();
+        
+        // 3. Verifica se a partida está completa
+        if (isMatchComplete(targetMatch)) {
+            // 4. Se estiver completa, chama o "motor" de resultados
+            const scores = { p1: targetMatch.p1.score, p2: targetMatch.p2.score };
+            const newData = resolveMatch(currentData, matchId, scores);
+            setTournamentData(newData);
+            
+            // 5. Chama o render novamente com o estado atualizado
+            // Usamos um setTimeout para garantir que o primeiro render termine
+            setTimeout(() => fullRender(), 100);
+        }
     };
 
     appContainer.addEventListener('change', window.scoreUpdateHandler);
