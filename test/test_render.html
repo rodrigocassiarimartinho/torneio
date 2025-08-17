@@ -29,26 +29,35 @@
                         <div id="losers-bracket-matches" class="bracket-matches"></div>
                     </div>
                 </div>
+                <div id="grand-final-container">
+                    <h2>Grande Final</h2>
+                     <div class="bracket-wrapper">
+                        <svg class="connector-svg" id="final-connector-svg"></svg>
+                        <div id="final-bracket-matches" class="bracket-matches"></div>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
 
     <script type="module">
-        // **INÍCIO DA CORREÇÃO**
         import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
         import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
         import { renderBracket } from '../js/bracket_render.js';
         import { parsePlayerInput } from '../js/parsing.js';
-        // **FIM DA CORREÇÃO**
-
+        
         const playerList = Array.from({length: 8}, (_, i) => `${i+1}. S${i+1}`).join('\n') + '\n' + Array.from({length: 12}, (_, i) => `P${i+9}`).join('\n');
         const playerCount = 20;
 
+        // 1. Usa os módulos de lógica validados para criar os dados
         const emptyStructure = buildDoubleBracketStructure(playerCount);
         const populatedData = populateDoubleBracket(emptyStructure, playerList);
 
+        // 2. Passa os dados para o renderizador
         renderBracket(populatedData.winnersBracket, '#winners-bracket-matches');
         renderBracket(populatedData.losersBracket, '#losers-bracket-matches');
+        renderBracket(populatedData.grandFinal, '#final-bracket-matches');
+
     </script>
 </body>
 </html>
