@@ -46,14 +46,17 @@ export function buildDoubleBracketStructure(n_original) {
     for (let r = 1; r < losersBracket.length; r++) {
         const pRoundIndex = r + 1;
         const currentLosersRound = losersBracket[r];
+        
         let lbWinners = losersBracket[r-1].map(m => ({ name: `Winner of M${m.id}`, isPlaceholder: true }));
         let wbLosers = [];
+
         const loserDest = TMath.getLoserDestinationRound(wbLoserDropIndex + 1);
         if (loserDest === pRoundIndex) {
             wbLosers = winnersBracket[wbLoserDropIndex].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
             if (pRoundIndex > 1) { wbLosers.reverse(); }
             wbLoserDropIndex++;
         }
+        
         currentLosersRound.forEach((match, matchIndex) => {
             const isInternalRound = lbWinners.length > 0 && wbLosers.length === 0;
             if (isInternalRound) {
@@ -68,19 +71,23 @@ export function buildDoubleBracketStructure(n_original) {
 
     // 5. Constrói a Grande Final (LÓGICA CORRIGIDA)
     if (bracketSize >= 2) {
-        const finalRound = [];
+        const finalRound1 = [];
         const wbFinalWinner = { name: `Winner of M${winnersBracket[numWinnersRounds-1][0].id}`, isPlaceholder: true };
         const lbFinalWinner = losersBracket[numLosersRounds-1] ? { name: `Winner of M${losersBracket[numLosersRounds-1][0].id}`, isPlaceholder: true } : {name: 'TBD'};
         
-        // Partida 1 da Final
         const finalMatch1 = { id: matchIdCounter++, p1: wbFinalWinner, p2: lbFinalWinner };
-        finalRound.push(finalMatch1);
+        finalRound1.push(finalMatch1);
+        grandFinal.push(finalRound1);
 
-        // Partida 2 da Final (Bracket Reset)
+        const finalRound2 = [];
         const finalMatch2 = { id: matchIdCounter++, p1: { name: `Winner of M${finalMatch1.id}`, isPlaceholder: true }, p2: { name: `Loser of M${finalMatch1.id}`, isPlaceholder: true } };
-        finalRound.push(finalMatch2);
-        
-        grandFinal.push(finalRound);
+        finalRound2.push(finalMatch2);
+        grandFinal.push(finalRound2);
+
+        const championRound = [];
+        const championBox = { id: matchIdCounter++, isChampionBox: true, p1: { name: `Winner of M${finalMatch2.id}`, isPlaceholder: true }, p2: null };
+        championRound.push(championBox);
+        grandFinal.push(championRound);
     }
     
     return { type: 'double', winnersBracket, losersBracket, grandFinal };
