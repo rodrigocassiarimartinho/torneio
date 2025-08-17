@@ -1,9 +1,17 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+    <meta charset="UTF-8">
     <title>Teste do Módulo de Resultados</title>
     <style>
-        /* ... (estilos do teste anterior) ... */
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
+        .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; }
+        h1, h2, h3 { color: #041A4A; }
+        .state-container { display: flex; gap: 2rem; }
+        .state { flex: 1; }
+        pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-size: 12px; }
+        .success { color: green; font-weight: bold; }
+        .fail { color: red; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -14,7 +22,6 @@
         import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
         import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
         import { resolveMatch, resolveInitialByes } from '../js/results.js';
-        import { parsePlayerInput } from '../js/parsing.js';
 
         const resultsContainer = document.getElementById('test-results');
         const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi\n5. Eva\n6. Fabio\n7. Gabi\n8. Hugo`;
@@ -42,11 +49,11 @@
         let html = `<div class="test-case"><h2>Teste de Sequência de Resultados</h2>`;
         
         // Validações
-        const winnerOfM5 = finalState.winnersBracket[2][0].p1.name;
-        const loserOfM5 = finalState.losersBracket[1].find(m => m.p2?.name === 'Davi');
-        const winnerOfP1 = finalState.losersBracket[1][0].p1.name;
+        const winnerOfM5 = finalState.winnersBracket[2][0].p1;
+        const loserOfM5_dest = finalState.losersBracket[1].find(m => m.p2?.name === 'Davi');
+        const winnerOfP1_dest = finalState.losersBracket[1].find(m => m.p1?.name === 'Hugo');
 
-        if (winnerOfM5 === 'Ana' && loserOfM5 && winnerOfP1 === 'Hugo') {
+        if (winnerOfM5?.name === 'Ana' && loserOfM5_dest && winnerOfP1_dest) {
             html += `<p class="success">✔️ SUCESSO: A sequência de resultados foi processada corretamente.</p>`;
         } else {
             html += `<p class="fail">❌ FALHA: A sequência de resultados falhou.</p>`;
