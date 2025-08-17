@@ -1,7 +1,7 @@
-// js/results.js
+// js/results.js - Versão com a lógica de placares e busca corrigida
+
 import { getLoserDestinationRound } from './math.js';
 
-// --- Funções Auxiliares Puras (internas a este módulo) ---
 function findMatchAndRoundIndex(rounds, matchId) {
     if (!rounds) return { match: null, round: null, roundIndex: -1 };
     for (let i = 0; i < rounds.length; i++) {
@@ -41,7 +41,6 @@ function findMatchInTournament(matchId, tournamentData) {
 function _determineWinner(match) {
     let winner = null, loser = null;
     const p1 = match.p1, p2 = match.p2;
-    // Hierarquia de regras baseada apenas no placar, como definido
     if (p2?.score === 'WO') { winner = p1; loser = p2; }
     else if (p1?.score === 'WO') { winner = p2; loser = p1; }
     else {
@@ -92,11 +91,11 @@ function _defineAutomaticScores(data) {
     allBrackets.forEach(bracket => {
         (bracket || []).forEach(round => {
             (round || []).forEach(match => {
-                if (match && (!match.p1?.score && !match.p2?.score)) { // Se a partida ainda não tem placar
+                if (match && (!match.p1?.score && !match.p2?.score)) {
                     const p1 = match.p1;
                     const p2 = match.p2;
-                    if (p1 && p2) { // Só processa partidas com 2 jogadores/byes
-                        if (p1.isBye && p2.isBye) { match.p2.score = 'WO'; changed = true; } // Bye vs Bye, p2 perde
+                    if (p1 && p2) {
+                        if (p1.isBye && p2.isBye) { match.p2.score = 'WO'; changed = true; }
                         else if (p1.isBye) { match.p1.score = 'WO'; changed = true; }
                         else if (p2.isBye) { match.p2.score = 'WO'; changed = true; }
                     }
@@ -113,11 +112,10 @@ function _calculateResultsAndAdvancePlayers(data) {
     allBrackets.forEach(bracket => {
         (bracket || []).forEach((round, roundIndex) => {
             (round || []).forEach(match => {
-                // Procura partidas com placar que ainda não foram resolvidas (não têm um 'vencedor' carimbado)
                 if (match && (match.p1?.score || match.p2?.score) && !match.winner) {
                     const { winner, loser } = _determineWinner(match);
                     if (winner) {
-                        match.winner = winner.name; // "Carimba" a partida como resolvida
+                        match.winner = winner.name;
                         const matchInfo = findMatchInTournament(match.id, data);
                         _advanceWinner(winner, matchInfo, data);
                         if (data.type === 'double' && matchInfo.bracketName === 'winnersBracket' && loser) {
@@ -148,9 +146,6 @@ export function resolveMatch(tournamentData, matchId, scores) {
     const matchInfo = findMatchInTournament(matchId, dataCopy);
     if (!matchInfo.match) return dataCopy;
 
-    // Limpa placares futuros antes de inserir o novo
-    // (A ser implementado se a lógica de reset for necessária)
-    
     if (matchInfo.match.p1) matchInfo.match.p1.score = scores.p1;
     if (matchInfo.match.p2) matchInfo.match.p2.score = scores.p2;
 
