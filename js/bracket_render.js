@@ -1,4 +1,4 @@
-// js/bracket_render.js - Versão com a correção do espaçamento horizontal
+// js/bracket_render.js - Versão Final e Definitiva (Estratégia 4.0)
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -55,16 +55,13 @@ function layoutBracket(targetSelector) {
     const firstRoundMatchCount = rounds[0].children.length;
     const totalBracketHeight = firstRoundMatchCount * blockHeight;
 
-    rounds.forEach((roundEl, roundIndex) => {
+    rounds.forEach((roundEl) => {
         const matchesInThisRound = Array.from(roundEl.children);
         const numMatches = matchesInThisRound.length;
         if (numMatches === 0) return;
         
-        // **INÍCIO DA CORREÇÃO**
-        // A largura da coluna da rodada NÃO deve incluir o espaçamento entre as rodadas.
-        const roundColumnWidth = CONFIG.SVG_WIDTH + (CONFIG.MATCH_MARGIN_X * 2);
-        roundEl.style.width = `${roundColumnWidth}px`;
-        // **FIM DA CORREÇÃO**
+        const roundWidth = CONFIG.SVG_WIDTH + (CONFIG.MATCH_MARGIN_X * 2);
+        roundEl.style.width = `${roundWidth}px`;
         
         const slotHeight = totalBracketHeight / numMatches;
 
@@ -84,11 +81,67 @@ function layoutBracket(targetSelector) {
 }
 
 function drawConnectors(targetSelector) {
-    // ... (função inalterada, já está correta)
+    const matchesContainer = document.querySelector(targetSelector);
+    if (!matchesContainer) return;
+    const wrapper = matchesContainer.closest('.bracket-wrapper');
+    const svg = wrapper.querySelector('.connector-svg');
+    if (!svg || !wrapper) return;
+    svg.innerHTML = ''; 
+    const rounds = matchesContainer.querySelectorAll('.round');
+    const horizontalMidpoint = CONFIG.ROUND_GAP / 2;
+
+    for (let r = 0; r < rounds.length; r++) {
+        const currentRoundMatches = Array.from(rounds[r].querySelectorAll('.match'));
+        
+        currentRoundMatches.forEach((match) => {
+            const matchRect = match.getBoundingClientRect();
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const startY = matchRect.top + matchRect.height / 2 - wrapperRect.top;
+
+            if (r < rounds.length - 1) {
+                const startX = matchRect.right - wrapperRect.left;
+                const endX = startX + horizontalMidpoint;
+                createLine(startX, startY, endX, startY, svg);
+            }
+
+            if (r > 0) {
+                const endX = matchRect.left - wrapperRect.left;
+                const startX = endX - horizontalMidpoint;
+                createLine(startX, startY, endX, startY, svg);
+            }
+        });
+    }
+    
+    for (let r = 0; r < rounds.length - 1; r++) {
+        const currentRoundMatches = rounds[r].querySelectorAll('.match');
+        const nextRoundMatches = rounds[r+1].querySelectorAll('.match');
+        
+        if (nextRoundMatches.length === currentRoundMatches.length / 2) {
+             nextRoundMatches.forEach((childMatch, childIndex) => {
+                const parent1 = currentRoundMatches[childIndex * 2];
+                const parent2 = currentRoundMatches[childIndex * 2 + 1];
+                if(parent1 && parent2) {
+                    const p1Rect = parent1.getBoundingClientRect();
+                    const p2Rect = parent2.getBoundingClientRect();
+                    const wrapperRect = wrapper.getBoundingClientRect();
+                    
+                    const midX = p1Rect.right - wrapperRect.left + horizontalMidpoint;
+                    const y1 = p1Rect.top + p1Rect.height / 2 - wrapperRect.top;
+                    const y2 = p2Rect.top + p2Rect.height / 2 - wrapperRect.top;
+                    createLine(midX, y1, midX, y2, svg);
+                }
+             });
+        }
+    }
 }
 
 function createLine(x1, y1, x2, y2, svg) {
-    // ... (função inalterada)
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${x1} ${y1} L ${x2} ${y2}`);
+    path.setAttribute('stroke', '#d0d6db');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+    svg.appendChild(path);
 }
 
 export function runLayoutAndDraw(targetSelector, roundsData) {
@@ -100,9 +153,40 @@ export function runLayoutAndDraw(targetSelector, roundsData) {
 }
 
 function updateDropdownValues(roundsData, targetSelector) {
-    // ... (função inalterada)
+    if(!roundsData) return;
+    const container = document.querySelector(targetSelector);
+    if(!container) return;
+    const allMatches = roundsData.flat();
+    const selects = container.querySelectorAll('.score-select');
+    selects.forEach(select => {
+        const matchId = parseInt(select.dataset.matchId);
+        const playerSlot = select.dataset.playerSlot;
+        const match = allMatches.find(m => m && m.id === matchId);
+        if (match && match[playerSlot] && match[playerSlot].score !== undefined) {
+            select.value = match[playerSlot].score;
+        } else {
+            select.value = "--";
+        }
+    });
 }
 
 export function renderBracket(roundsData, targetSelector) {
-    // ... (função inalterada)
+    const container = document.querySelector(targetSelector);
+    if (!container) return;
+    container.innerHTML = '';
+    if (!roundsData || roundsData.length === 0) return;
+    roundsData.forEach(roundData => {
+        const roundEl = document.createElement('div');
+        roundEl.className = 'round';
+        (roundData || []).forEach(matchData => {
+            if (!matchData) return;
+            const matchEl = document.createElement('div');
+            matchEl.className = 'match';
+            matchEl.id = `match-${matchData.id}`;
+            matchEl.innerHTML = createMatchSVG(matchData);
+            roundEl.appendChild(matchEl);
+        });
+        container.appendChild(roundEl);
+    });
+    runLayoutAndDraw(targetSelector, roundsData);
 }
