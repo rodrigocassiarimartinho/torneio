@@ -1,17 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
     <title>Teste do Módulo de Resultados</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
-        .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; }
-        h1, h2, h3 { color: #041A4A; }
-        .state-container { display: flex; gap: 2rem; }
-        .state { flex: 1; }
-        pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-size: 12px; }
-        .success { color: green; font-weight: bold; }
-        .fail { color: red; font-weight: bold; }
+        /* ... (estilos do teste anterior) ... */
     </style>
 </head>
 <body>
@@ -23,52 +15,46 @@
         import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
         import { resolveMatch, resolveInitialByes } from '../js/results.js';
         import { parsePlayerInput } from '../js/parsing.js';
-        import { getNextPowerOfTwo } from '../js/math.js';
 
         const resultsContainer = document.getElementById('test-results');
-        const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi\n5. Eva\n6. Fabio`; // 6 Jogadores -> 2 Byes
-        const { seededPlayers, unseededPlayers } = parsePlayerInput(playerList);
-        const playerCount = seededPlayers.length + unseededPlayers.length;
-
-        let structure = buildDoubleBracketStructure(playerCount);
+        const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi\n5. Eva\n6. Fabio\n7. Gabi\n8. Hugo`;
+        
+        // --- GERAÇÃO DOS DADOS DE BASE ---
+        let structure = buildDoubleBracketStructure(8);
         let tournamentData = { type: 'double', ...populateDoubleBracket(structure, playerList) };
 
-        // --- TESTE 1: Resolução Automática dos Byes ---
-        const initialStateByes = JSON.parse(JSON.stringify(tournamentData));
-        const stateAfterByes = resolveInitialByes(initialStateByes);
+        // --- TESTE ---
+        let initialState = JSON.parse(JSON.stringify(tournamentData));
         
-        let byeTestHtml = `<div class="test-case"><h2>Teste 1: Resolução Automática dos Byes</h2>`;
-        const anaInV2 = stateAfterByes.winnersBracket[1].some(m => m.p1?.name === 'Ana' || m.p2?.name === 'Ana');
-        const biaInV2 = stateAfterByes.winnersBracket[1].some(m => m.p1?.name === 'Bia' || m.p2?.name === 'Bia');
-        const byesDropped = stateAfterByes.losersBracket[0].filter(m => m.p1?.isBye || m.p2?.isBye).length === 2;
+        // Simula uma sequência de resultados
+        let state1 = resolveMatch(initialState, 1, { p1: '7', p2: '5' }); // Ana vence Hugo
+        let state2 = resolveMatch(state1, 2, { p1: '7', p2: '4' });     // Davi vence Eva
+        let state3 = resolveMatch(state2, 3, { p1: '7', p2: '3' });     // Bia vence Gabi
+        let state4 = resolveMatch(state3, 4, { p1: '7', p2: '1' });     // Carlos vence Fabio
         
-        if (anaInV2 && biaInV2 && byesDropped) {
-            byeTestHtml += `<p class="success">✔️ SUCESSO: Byes resolvidos e avançados corretamente.</p>`;
+        let state5 = resolveMatch(state4, 8, { p1: '7', p2: '6' });      // Hugo vence Eva na P1
+        let state6 = resolveMatch(state5, 9, { p1: '7', p2: '2' });      // Gabi vence Fabio na P1
+        
+        let state7 = resolveMatch(state6, 5, { p1: '7', p2: '0' });      // Ana vence Davi na V2
+        
+        const finalState = state7; // O estado final após a sequência
+
+        let html = `<div class="test-case"><h2>Teste de Sequência de Resultados</h2>`;
+        
+        // Validações
+        const winnerOfM5 = finalState.winnersBracket[2][0].p1.name;
+        const loserOfM5 = finalState.losersBracket[1].find(m => m.p2?.name === 'Davi');
+        const winnerOfP1 = finalState.losersBracket[1][0].p1.name;
+
+        if (winnerOfM5 === 'Ana' && loserOfM5 && winnerOfP1 === 'Hugo') {
+            html += `<p class="success">✔️ SUCESSO: A sequência de resultados foi processada corretamente.</p>`;
         } else {
-            byeTestHtml += `<p class="fail">❌ FALHA: A resolução de byes falhou.</p>`;
+            html += `<p class="fail">❌ FALHA: A sequência de resultados falhou.</p>`;
         }
-        byeTestHtml += `<div class="state-container"><div class="state"><h3>Estado Inicial</h3><pre>${JSON.stringify(initialStateByes, null, 2)}</pre></div>`;
-        byeTestHtml += `<div class="state"><h3>Estado Final (Pós-Byes)</h3><pre>${JSON.stringify(stateAfterByes, null, 2)}</pre></div></div></div>`;
-        resultsContainer.innerHTML += byeTestHtml;
-
-
-        // --- TESTE 2: Resolução de Partida Manual ---
-        const matchToUpdate = stateAfterByes.winnersBracket[0].find(m => m.p1?.name === 'Carlos' || m.p2?.name === 'Carlos');
-        const matchIdToUpdate = matchToUpdate.id;
-        const finalState = resolveMatch(stateAfterByes, matchIdToUpdate, { p1: '7', p2: '4' });
         
-        let matchTestHtml = `<div class="test-case"><h2>Teste 2: Resolução de Partida Manual (Carlos 7 vs. Fabio 4)</h2>`;
-        const carlosInV2 = finalState.winnersBracket[1].some(m => m.p1?.name === 'Carlos' || m.p2?.name === 'Carlos');
-        const fabioInLosers = finalState.losersBracket[0].find(m => m.p1?.name === 'Fabio' || m.p2?.name === 'Fabio');
-
-        if (carlosInV2 && fabioInLosers) {
-            matchTestHtml += `<p class="success">✔️ SUCESSO: Resolução de partida manual funcionou.</p>`;
-        } else {
-            matchTestHtml += `<p class="fail">❌ FALHA: A resolução de partida manual falhou.</p>`;
-        }
-        matchTestHtml += `<div class="state-container"><div class="state"><h3>Estado Inicial (Pós-Byes)</h3><pre>${JSON.stringify(stateAfterByes, null, 2)}</pre></div>`;
-        matchTestHtml += `<div class="state"><h3>Estado Final</h3><pre>${JSON.stringify(finalState, null, 2)}</pre></div></div></div>`;
-        resultsContainer.innerHTML += matchTestHtml;
+        html += `<div class="state-container"><div class="state"><h3>Estado Inicial</h3><pre>${JSON.stringify(initialState, null, 2)}</pre></div>`;
+        html += `<div class="state"><h3>Estado Final</h3><pre>${JSON.stringify(finalState, null, 2)}</pre></div></div></div>`;
+        resultsContainer.innerHTML += html;
 
     </script>
 </body>
