@@ -8,6 +8,7 @@ export function buildSingleBracketStructure(n_original) {
     let matchIdCounter = 1;
     const rounds = [];
 
+    // 1. Constrói o esqueleto da chave
     const numRounds = getWinnersBracketRoundsCount(bracketSize);
     for (let i = 1; i <= numRounds; i++) {
         const numMatches = getWinnersRoundMatchCount(i, bracketSize);
@@ -15,6 +16,7 @@ export function buildSingleBracketStructure(n_original) {
         rounds.push(round);
     }
 
+    // 2. Preenche a chave com apontadores
     for(let r=0; r < rounds.length - 1; r++) {
         const currentRound = rounds[r];
         const nextRound = rounds[r+1];
@@ -24,5 +26,19 @@ export function buildSingleBracketStructure(n_original) {
         });
     }
     
-    return { rounds };
+    // 3. Adiciona a caixa do campeão como uma nova rodada
+    if (rounds.length > 0) {
+        const finalMatch = rounds[rounds.length - 1][0];
+        const championRound = [];
+        const championBox = { 
+            id: matchIdCounter++, 
+            isChampionBox: true, 
+            p1: { name: `Winner of M${finalMatch.id}`, isPlaceholder: true }, 
+            p2: null 
+        };
+        championRound.push(championBox);
+        rounds.push(championRound);
+    }
+    
+    return { type: 'single', rounds };
 }
