@@ -20,11 +20,8 @@
     <div id="test-results"></div>
 
     <script type="module">
-        // **INÍCIO DA CORREÇÃO**
-        // Caminhos atualizados para funcionar a partir da pasta /test/
         import { buildSingleBracketStructure } from '../js/structures/single_bracket_structure.js';
         import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
-        // **FIM DA CORREÇÃO**
 
         const resultsContainer = document.getElementById('test-results');
 
@@ -38,8 +35,8 @@
                 (bracket || []).forEach((round, i) => {
                     html += `<tr><td colspan="3" class="round-title">Rodada ${i+1}</td></tr>`;
                     (round || []).forEach(match => {
-                        const p1_text = match.p1?.name || '(Apontador)';
-                        const p2_text = match.p2?.name || '(Apontador)';
+                        const p1_text = match.p1?.name || '(Vazio)';
+                        const p2_text = match.p2?.name || '(Vazio)';
                         html += `<tr><td class="match-id">M${match.id}</td><td>${p1_text}</td><td>${p2_text}</td></tr>`;
                     });
                 });
@@ -58,8 +55,8 @@
             resultsContainer.innerHTML += html;
         }
         
-        // Teste para 64 jogadores
-        const playerCount = 64;
+        // Teste para 16 jogadores
+        const playerCount = 16;
         
         const singleStructure = buildSingleBracketStructure(playerCount);
         renderStructureToPage(`Teste de Eliminação Simples com ${playerCount} Jogadores`, singleStructure);
