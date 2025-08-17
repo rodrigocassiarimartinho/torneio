@@ -1,7 +1,7 @@
-// js/results.js - Versão com a lógica de clonagem corrigida
-
+// js/results.js
 import { getLoserDestinationRound } from './math.js';
 
+// --- Funções Auxiliares Puras (internas a este módulo) ---
 function findMatchAndRoundIndex(rounds, matchId) {
     if (!rounds) return { match: null, round: null, roundIndex: -1 };
     for (let i = 0; i < rounds.length; i++) {
@@ -16,17 +16,24 @@ function findMatchAndRoundIndex(rounds, matchId) {
 }
 
 function findMatchInTournament(matchId, tournamentData) {
-    if (!tournamentData.type) return { match: null };
-    if (tournamentData.type === 'single') {
-        const result = findMatchAndRoundIndex(tournamentData.rounds, matchId);
-        return { ...result, bracket: tournamentData.rounds, bracketName: 'rounds' };
-    } else if (tournamentData.type === 'double') {
-        let result = findMatchAndRoundIndex(tournamentData.winnersBracket, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.winnersBracket, bracketName: 'winnersBracket' };
-        result = findMatchAndRoundIndex(tournamentData.losersBracket, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.losersBracket, bracketName: 'losersBracket' };
-        result = findMatchAndRoundIndex(tournamentData.grandFinal, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.grandFinal, bracketName: 'grandFinal' };
+    const data = tournamentData.type === 'single' ? { rounds: tournamentData.rounds } : tournamentData;
+    if (!data) return { match: null };
+
+    if (data.rounds) {
+        const result = findMatchAndRoundIndex(data.rounds, matchId);
+        if (result.match) return { ...result, bracket: data.rounds, bracketName: 'rounds' };
+    }
+    if (data.winnersBracket) {
+        let result = findMatchAndRoundIndex(data.winnersBracket, matchId);
+        if (result.match) return { ...result, bracket: data.winnersBracket, bracketName: 'winnersBracket' };
+    }
+    if (data.losersBracket) {
+        let result = findMatchAndRoundIndex(data.losersBracket, matchId);
+        if (result.match) return { ...result, bracket: data.losersBracket, bracketName: 'losersBracket' };
+    }
+    if (data.grandFinal) {
+        let result = findMatchAndRoundIndex(data.grandFinal, matchId);
+        if (result.match) return { ...result, bracket: data.grandFinal, bracketName: 'grandFinal' };
     }
     return { match: null };
 }
@@ -77,6 +84,7 @@ function _dropLoser(loser, matchInfo, data) {
     }
 }
 
+// --- Funções Principais Exportadas ---
 export function resolveMatch(tournamentData, matchId, scores) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
     const matchInfo = findMatchInTournament(matchId, dataCopy);
@@ -98,12 +106,14 @@ export function resolveMatch(tournamentData, matchId, scores) {
 
 export function resolveInitialByes(tournamentData) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
-    const firstRound = (dataCopy.type === 'single') ? dataCopy.rounds[0] : dataCopy.winnersBracket[0];
+    const bracketToProcess = dataCopy.type === 'single' ? dataCopy : dataCopy;
+    const firstRound = (bracketToProcess.rounds) ? bracketToProcess.rounds[0] : bracketToProcess.winnersBracket[0];
     
     firstRound.forEach(match => {
         if (match && (match.p1?.isBye || match.p2?.isBye)) {
             const matchInfo = findMatchInTournament(match.id, dataCopy);
             const { winner, loser } = _determineWinner(match);
+
             if(winner) {
                 _advanceWinner(winner, matchInfo, dataCopy);
                 if (dataCopy.type === 'double' && loser) {
