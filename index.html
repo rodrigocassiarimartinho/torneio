@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Chave de Torneio</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/main.js" type="module" defer></script>
+</head>
+<body>
+
+    <div id="setup">
+        <h1>Gerador de Chave</h1>
+        <div class="tournament-type-selector">
+            <p>Selecione o tipo de chave:</p>
+            <div>
+                <input type="radio" id="type-single" name="bracket-type" value="single" checked>
+                <label for="type-single">Eliminação Simples</label>
+            </div>
+            <div>
+                <input type="radio" id="type-double" name="bracket-type" value="double">
+                <label for="type-double">Dupla Eliminação</label>
+            </div>
+        </div>
+        <p>Insira a lista de jogadores (um por linha):</p>
+        <textarea id="player-list" placeholder="1. Zé&#10;2. Bia&#10;Mané&#10;Leo&#10;Ana&#10;..."></textarea>
+        <button id="generate-btn">Gerar Chave</button>
+    </div>
+
+    <div id="app-container" style="display: none;">
+        <header class="app-header">
+            <button id="reset-btn">Gerar Nova Chave</button>
+            <h1>Torneio de gamão</h1>
+        </header>
+        
+        <main class="main-content">
+            <div class="brackets-column">
+                <div id="winners-bracket-container">
+                    <h2 id="main-bracket-title"></h2>
+                    <div class="bracket-wrapper">
+                        <svg class="connector-svg" id="winners-connector-svg"></svg>
+                        <div class="bracket-matches" id="winners-bracket-matches"></div>
+                    </div>
+                </div>
+                <div id="losers-bracket-container" style="display: none;">
+                    <h2>Chave dos Perdedores</h2>
+                     <div class="bracket-wrapper">
+                        <svg class="connector-svg" id="losers-connector-svg"></svg>
+                        <div class="bracket-matches" id="losers-bracket-matches"></div>
+                    </div>
+                </div>
+                <div id="grand-final-container" style="display: none;">
+                    <h2>Grande Final</h2>
+                    <div class="bracket-wrapper">
+                        <svg class="connector-svg" id="final-connector-svg"></svg>
+                        <div class="bracket-matches" id="final-bracket-matches"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="classification-column">
+                <div id="classification-container">
+                </div>
+            </div>
