@@ -8,7 +8,7 @@
     <h1>Abra a consola (F12) para ver os resultados dos testes.</h1>
 
     <div id="app-container">
-        <div class="match" data-match-id="1">
+        <div class="match" data-previous-value="--">
             <select class="score-select" data-match-id="1" data-player-slot="p1">
                 <option value="--">--</option>
                 <option value="7">7</option>
@@ -21,7 +21,11 @@
     </div>
 
     <script type="module">
-        import { setupInteractivity } from './js/interactivity.js';
+        // **INÍCIO DA CORREÇÃO**
+        // Caminhos atualizados para funcionar a partir da pasta /test/
+        import { setupInteractivity } from '../js/interactivity.js';
+        import { resolveMatch } from '../js/results.js';
+        // **FIM DA CORREÇÃO**
         
         console.log("%c--- INICIANDO TESTE DE INTERATIVIDADE ---", "font-size: 1.5em; font-weight: bold;");
 
@@ -34,14 +38,14 @@
         const getMockData = () => mockTournamentData;
         const setMockData = (newData) => {
             mockTournamentData = newData;
-            console.log("%c✔️ SUCESSO: O estado foi atualizado!", "color: green; font-weight: bold;", newData);
+            console.log("%c✔️ SUCESSO: O estado foi atualizado!", "color: green; font-weight: bold;");
         };
         const mockFullRender = () => {
             console.log("%c✔️ SUCESSO: A função de renderização foi chamada.", "color: green; font-weight: bold;");
         };
 
         // --- O TESTE ---
-        // 1. Configura a interatividade no nosso mini-DOM
+        // 1. "Liga" a interatividade
         setupInteractivity(getMockData, setMockData, mockFullRender);
 
         // 2. Simula a ação do utilizador
