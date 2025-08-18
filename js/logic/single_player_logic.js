@@ -9,12 +9,15 @@ export function populateSingleBracket(structure, playerList) {
     const bracketSize = getNextPowerOfTwo(allPlayers.length);
     const byesCount = bracketSize - allPlayers.length;
 
+    // Passo 1: Criação das Listas
     const seeds = [...seededPlayers];
     let others = [...unseededPlayers];
     const byes = Array.from({ length: byesCount }, (_, i) => ({ name: `BYE_${i + 1}`, isBye: true }));
+    
+    // Passo 2: Criação da Grade Vazia
     let playerSlots = new Array(bracketSize).fill(null);
 
-    // Passo 3: Posicionar Cabeças de Chave
+    // Passo 3: Posicionamento dos Cabeças de Chave
     const numSeeds = seeds.length > 0 ? getNextPowerOfTwo(seeds.length) : 0;
     if (numSeeds > 0) {
         const seedOrder = generateSeedOrder(numSeeds);
@@ -31,7 +34,7 @@ export function populateSingleBracket(structure, playerList) {
 
     // Passo 4: Distribuição Prioritária de Byes
     let byesToDistribute = [...byes];
-    seeds.forEach(seed => {
+    seeds.sort((a, b) => a.seed - b.seed).forEach(seed => {
         if (byesToDistribute.length > 0) {
             const p_slot = playerSlots.findIndex(p => p && p.seed === seed.seed);
             if (p_slot !== -1) {
@@ -65,5 +68,5 @@ export function populateSingleBracket(structure, playerList) {
         match.p2 = playerSlots[index * 2 + 1];
     });
 
-    return structure;
+    return { type: 'single', ...structure };
 }
