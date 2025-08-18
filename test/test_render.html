@@ -4,57 +4,72 @@
     <meta charset="UTF-8">
     <title>Teste de Renderização da Chave (4.0)</title>
     <link rel="stylesheet" href="../css/style.css">
-    <style>
-        /* Adiciona apenas estilos mínimos para o contexto do teste */
-        body { padding: 2rem; }
-        h1 { margin-bottom: 2rem; text-align: center; }
-    </style>
+    <style> body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; } h1, h2 { text-align: center; } </style>
 </head>
 <body>
-    <h1>Validação do Módulo de Renderização (`bracket_render.js`)</h1>
+    <h1>Validação Completa do Módulo de Renderização</h1>
     
-    <div id="app-container" style="display: block;">
+    <div id="app-container-double" style="display: block; margin-bottom: 4rem;">
         <main class="main-content">
             <div class="brackets-column">
                 <div id="winners-bracket-container">
-                    <h2>Chave dos Vencedores</h2>
+                    <h2>Chave Dupla - Vencedores</h2>
                     <div class="bracket-wrapper">
-                        <svg class="connector-svg" id="winners-connector-svg"></svg>
+                        <svg class="connector-svg"></svg>
                         <div id="winners-bracket-matches" class="bracket-matches"></div>
                     </div>
                 </div>
                 <div id="losers-bracket-container">
-                    <h2>Chave dos Perdedores</h2>
+                    <h2>Chave Dupla - Perdedores</h2>
                      <div class="bracket-wrapper">
-                        <svg class="connector-svg" id="losers-connector-svg"></svg>
+                        <svg class="connector-svg"></svg>
                         <div id="losers-bracket-matches" class="bracket-matches"></div>
-                    </div>
-                </div>
-                <div id="grand-final-container">
-                    <h2>Grande Final</h2>
-                     <div class="bracket-wrapper">
-                        <svg class="connector-svg" id="final-connector-svg"></svg>
-                        <div id="final-bracket-matches" class="bracket-matches"></div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <hr>
+
+    <div id="app-container-single" style="display: block; margin-top: 2rem;">
+        <main class="main-content">
+            <div class="brackets-column">
+                <div id="single-bracket-container">
+                    <h2>Chave Simples</h2>
+                    <div class="bracket-wrapper">
+                        <svg class="connector-svg"></svg>
+                        <div id="single-bracket-matches" class="bracket-matches"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+
     <script type="module">
+        import { buildSingleBracketStructure } from '../js/structures/single_bracket_structure.js';
         import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
+        import { populateSingleBracket } from '../js/logic/single_player_logic.js';
         import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
         import { renderBracket } from '../js/bracket_render.js';
+        import { parsePlayerInput } from '../js/parsing.js';
 
-        const playerList = Array.from({length: 8}, (_, i) => `${i+1}. S${i+1}`).join('\n') + '\n' + Array.from({length: 12}, (_, i) => `P${i+9}`).join('\n');
-        const playerCount = 20;
+        // --- DADOS DE TESTE ---
+        const playerList = Array.from({length: 8}, (_, i) => `${i+1}. S${i+1}`).join('\n') + '\n' + Array.from({length: 8}, (_, i) => `P${i+9}`).join('\n');
+        const playerCount = 16;
 
-        const emptyStructure = buildDoubleBracketStructure(playerCount);
-        const populatedData = populateDoubleBracket(emptyStructure, playerList);
+        // --- TESTE DUPLA ELIMINAÇÃO ---
+        const emptyDouble = buildDoubleBracketStructure(playerCount);
+        const populatedDouble = populateDoubleBracket(emptyDouble, playerList);
+        renderBracket(populatedDouble.winnersBracket, '#winners-bracket-matches');
+        renderBracket(populatedDouble.losersBracket, '#losers-bracket-matches');
 
-        renderBracket(populatedData.winnersBracket, '#winners-bracket-matches');
-        renderBracket(populatedData.losersBracket, '#losers-bracket-matches');
-        renderBracket(populatedData.grandFinal, '#final-bracket-matches');
+        // --- TESTE ELIMINAÇÃO SIMPLES ---
+        const emptySingle = buildSingleBracketStructure(playerCount);
+        const populatedSingle = populateSingleBracket(emptySingle, playerList);
+        renderBracket(populatedSingle.rounds, '#single-bracket-matches');
+
     </script>
 </body>
 </html>
