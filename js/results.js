@@ -1,6 +1,4 @@
-// js/results.js - Versão com a lógica da Grande Final corrigida
-
-import { getLoserDestinationRound } from './math.js';
+// js/results.js - Versão com o novo motor de estabilização
 
 // --- Funções Auxiliares (inalteradas) ---
 function findMatchAndRoundIndex(rounds, matchId) {
@@ -46,63 +44,118 @@ function _determineWinner(match) {
 function _advancePlayer(player, placeholder, data) {
     const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket, data.grandFinal];
     const playerData = { ...player };
-    delete playerData.score;
-    for (const bracket of allBrackets) {
+    delete playerData.score; // Limpa o placar antes de avançar
+    for (const bracket of (allBrackets || [])) {
         for (const round of (bracket || [])) {
             for (const match of (round || [])) {
-                if (match.p1?.name === placeholder) { match.p1 = playerData; return; }
-                if (match.p2?.name === placeholder) { match.p2 = playerData; return; }
+                if (match.p1?.isPlaceholder && match.p1?.name === placeholder) { 
+                    match.p1 = playerData; 
+                    return; 
+                }
+                if (match.p2?.isPlaceholder && match.p2?.name === placeholder) { 
+                    match.p2 = playerData; 
+                    return; 
+                }
             }
         }
     }
 }
 
-// --- Funções Principais Exportadas ---
-export function resolveMatch(tournamentData, matchId, scores) {
-    let dataCopy = JSON.parse(JSON.stringify(tournamentData));
-    const { match, bracketName, bracket, roundIndex } = findMatchInTournament(matchId, dataCopy);
-    if (!match) return dataCopy;
+// --- Motor de Lógica Principal (NOVA ARQUITETURA) ---
 
-    if (match.p1) match.p1.score = scores.p1;
-    if (match.p2) match.p2.score = scores.p2;
-
+// Função interna que avança um jogador se a partida tiver um vencedor
+function processMatchResult(data, match, bracketName) {
     const { winner, loser } = _determineWinner(match);
-
     if (winner) {
-        // **INÍCIO DA CORREÇÃO**
-        // LÓGICA ESPECIAL PARA A GRANDE FINAL
-        if (bracketName === 'grandFinal' && roundIndex === 0) { // Se for a PRIMEIRA final
+        // Lógica Especial para a Grande Final
+        if (bracketName === 'grandFinal' && match.id === data.grandFinal[0][0].id) { 
             const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
             if (winnerIsFromWinnersBracket) {
-                // Cenário A: Vencedor da Vence
-                const championBox = dataCopy.grandFinal[2][0];
-                _advancePlayer(winner, championBox.p1.name, dataCopy); // Avança direto para a caixa do campeão
+                const championBox = data.grandFinal[2][0];
+                _advancePlayer(winner, championBox.p1.name, data);
             } else {
-                // Cenário B: Vencedor da Perde (Bracket Reset)
-                _advancePlayer(winner, `Winner of M${match.id}`, dataCopy);
-                _advancePlayer(loser, `Loser of M${match.id}`, dataCopy);
+                _advancePlayer(winner, `Winner of M${match.id}`, data);
+                _advancePlayer(loser, `Loser of M${match.id}`, data);
             }
         } else { // Lógica normal para as outras partidas
-            _advancePlayer(winner, `Winner of M${match.id}`, dataCopy);
-            if (dataCopy.type === 'double' && bracketName === 'winnersBracket' && loser) {
-                _advancePlayer(loser, `Loser of M${match.id}`, dataCopy);
+            _advancePlayer(winner, `Winner of M${match.id}`, data);
+            if (data.type === 'double' && bracketName === 'winnersBracket' && loser) {
+                _advancePlayer(loser, `Loser of M${match.id}`, data);
             }
         }
-        // **FIM DA CORREÇÃO**
+        match.isProcessed = true; // Marca a partida como processada
+        return true; // Indica que uma mudança ocorreu
     }
+    return false; // Nenhuma mudança
+}
+
+
+export function stabilizeBracket(tournamentData) {
+    let dataCopy = JSON.parse(JSON.stringify(tournamentData));
+    let changesMade;
+
+    do {
+        changesMade = false;
+        const allBracketsInfo = [
+            { name: 'winnersBracket', data: dataCopy.winnersBracket },
+            { name: 'losersBracket', data: dataCopy.losersBracket },
+            { name: 'grandFinal', data: dataCopy.grandFinal },
+            { name: 'rounds', data: dataCopy.rounds } // Para eliminação simples
+        ];
+
+        // 1. FASE DE PLACAR (Atribui WOs automáticos)
+        for (const bracketInfo of allBracketsInfo) {
+            for (const round of (bracketInfo.data || [])) {
+                for (const match of (round || [])) {
+                    if (!match || (match.p1 && match.p1.score !== undefined) || (match.p2 && match.p2.score !== undefined)) continue;
+
+                    const p1_isBye = match.p1 && match.p1.isBye;
+                    const p2_isBye = match.p2 && match.p2.isBye;
+                    const p1_exists = match.p1 && !match.p1.isBye && !match.p1.isPlaceholder;
+                    const p2_exists = match.p2 && !match.p2.isBye && !match.p2.isPlaceholder;
+
+                    if (p1_exists && p2_isBye) {
+                        match.p2.score = 'WO';
+                        changesMade = true;
+                    } else if (p2_exists && p1_isBye) {
+                        match.p1.score = 'WO';
+                        changesMade = true;
+                    }
+                }
+            }
+        }
+
+        // 2. FASE DE RESULTADO (Avança jogadores de partidas com placar)
+        for (const bracketInfo of allBracketsInfo) {
+            for (const round of (bracketInfo.data || [])) {
+                for (const match of (round || [])) {
+                    if (!match || match.isProcessed) continue;
+                    const hasScore = (match.p1 && match.p1.score !== undefined) || (match.p2 && match.p2.score !== undefined);
+                    if (hasScore) {
+                        if (processMatchResult(dataCopy, match, bracketInfo.name)) {
+                            changesMade = true;
+                        }
+                    }
+                }
+            }
+        }
+
+    } while (changesMade);
+
     return dataCopy;
 }
 
-export function resolveInitialByes(tournamentData) {
+export function updateScoreAndStabilize(tournamentData, matchId, playerSlot, newScore) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
-    const firstRound = (dataCopy.type === 'single') ? dataCopy.rounds[0] : dataCopy.winnersBracket[0];
-    
-    firstRound.forEach(match => {
-        if (match && (match.p1?.isBye || match.p2?.isBye)) {
-            if(match.p1?.isBye) match.p1.score = 'WO';
-            if(match.p2?.isBye) match.p2.score = 'WO';
-            dataCopy = resolveMatch(dataCopy, match.id, { p1: match.p1.score, p2: match.p2.score });
-        }
-    });
-    return dataCopy;
+    const { match } = findMatchInTournament(matchId, dataCopy);
+
+    if (!match) return dataCopy;
+
+    // 1. Escreve o placar vindo do usuário
+    if (!match[playerSlot]) match[playerSlot] = {};
+    match[playerSlot].score = newScore;
+    match.isProcessed = false; // Desmarca para que o motor possa processá-lo
+
+    // 2. Aciona o motor de estabilização
+    return stabilizeBracket(dataCopy);
 }
