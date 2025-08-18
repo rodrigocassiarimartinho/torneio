@@ -4,23 +4,12 @@
     <meta charset="UTF-8">
     <title>Teste de Renderização da Chave (4.0)</title>
     <link rel="stylesheet" href="../css/style.css">
-<style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
-    .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; background-color: #fff; }
-    h1, h2, h3 { color: #041A4A; }
-    #app-container { display: flex; flex-direction: column; align-items: flex-start; } /* Alteração aqui */
-    .main-content { display: flex; flex-direction: row; gap: 40px; align-items: flex-start; } /* E aqui */
-    .brackets-column { display: flex; flex-direction: column; align-items: flex-start; }
-    .bracket-wrapper { position: relative; margin-bottom: 20px; }
-    .bracket-matches { position: relative; }
-    .connector-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-    .round { display: flex; flex-direction: column; gap: 20px; position: absolute; }
-    .match { position: absolute; left: 0; }
-    .svg-text-id { font-size: 0.8em; }
-    .svg-text-seed { font-size: 0.7em; fill: #6c757d; }
-    .svg-text-name { font-size: 0.9em; }
-    .svg-text-placeholder { color: #adb5bd; font-style: italic; }
-</style></head>
+    <style>
+        /* Adiciona apenas estilos mínimos para o contexto do teste */
+        body { padding: 2rem; }
+        h1 { margin-bottom: 2rem; text-align: center; }
+    </style>
+</head>
 <body>
     <h1>Validação do Módulo de Renderização (`bracket_render.js`)</h1>
     
@@ -56,17 +45,16 @@
         import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
         import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
         import { renderBracket } from '../js/bracket_render.js';
-        
-        const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi\n5. Eva\n6. Fabio\n7. Gabi\n8. Hugo`;
-        const playerCount = 8;
 
-        const structure = buildDoubleBracketStructure(playerCount);
-        const populatedData = populateDoubleBracket(structure, playerList);
+        const playerList = Array.from({length: 8}, (_, i) => `${i+1}. S${i+1}`).join('\n') + '\n' + Array.from({length: 12}, (_, i) => `P${i+9}`).join('\n');
+        const playerCount = 20;
+
+        const emptyStructure = buildDoubleBracketStructure(playerCount);
+        const populatedData = populateDoubleBracket(emptyStructure, playerList);
 
         renderBracket(populatedData.winnersBracket, '#winners-bracket-matches');
         renderBracket(populatedData.losersBracket, '#losers-bracket-matches');
         renderBracket(populatedData.grandFinal, '#final-bracket-matches');
-
     </script>
 </body>
 </html>
