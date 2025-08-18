@@ -12,28 +12,26 @@ const CONFIG = {
 };
 
 function createMatchSVG(matchData) {
-    // Bloco de código específico para a caixa do campeão
     if (matchData.isChampionBox) {
-        const winner = matchData.p1 || { name: 'Aguardando...', isPlaceholder: true };
+        const winner = matchData.p1 || { name: 'TBD', isPlaceholder: true };
         const winnerName = winner.name.length > 25 ? winner.name.substring(0, 22) + '...' : winner.name;
         const nameClass = winner.isPlaceholder ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
 
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
                 <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#041A4A" stroke="#041A4A" stroke-width="1"/>
-                <text x="50%" y="22" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="600" fill="#FFFFFF">CAMPEÃO</text>
-                <text x="50%" y="47" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" fill="#FFFFFF">${winnerName}</text>
+                <text x="50%" y="22" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="600" fill="#FFFFFF">Champion</text>
+                <text x="50%" y="49" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" fill="#FFFFFF">${winnerName}</text>
             </svg>
         `;
     }
 
-    // Lógica para partidas normais
     const p1_Y = 18, p2_Y = 47;
-    let p1 = { name: 'BYE', seed: null, ...matchData.p1 };
-    let p2 = { name: 'BYE', seed: null, ...matchData.p2 };
+    let p1 = { name: 'Bye', seed: null, ...matchData.p1 };
+    let p2 = { name: 'Bye', seed: null, ...matchData.p2 };
 
-    if (p1.isBye) p1.name = 'BYE';
-    if (p2.isBye) p2.name = 'BYE';
+    if (p1.isBye) p1.name = 'Bye';
+    if (p2.isBye) p2.name = 'Bye';
     if (p1.name.length > 30) p1.name = p1.name.substring(0, 27) + '...';
     if (p2.name.length > 30) p2.name = p2.name.substring(0, 27) + '...';
 
@@ -42,14 +40,13 @@ function createMatchSVG(matchData) {
 
     const seed1HTML = p1.seed ? `<text x="${seedX}" y="${p1_Y}" dominant-baseline="middle" class="svg-text-seed" fill="#041A4A">[${p1.seed}]</text>` : '';
     const seed2HTML = p2.seed ? `<text x="${seedX}" y="${p2_Y}" dominant-baseline="middle" class="svg-text-seed" fill="#041A4A">[${p2.seed}]</text>` : '';
-    const name1Class = (p1.isPlaceholder || p1.name === 'BYE') ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
-    const name2Class = (p2.isPlaceholder || p2.name === 'BYE') ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
+    const name1Class = (p1.isPlaceholder || p1.name === 'Bye') ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
+    const name2Class = (p2.isPlaceholder || p2.name === 'Bye') ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
 
     let scoreOptions = `<option value="--">--</option><option value="WO">WO</option>`;
     for(let i = 0; i <= 31; i++) { scoreOptions += `<option value="${i}">${i}</option>`; }
 
-    // --- Lógica para ocultar placares em jogos com BYE ---
-    const isDisabled = name1Class.includes('placeholder') || name2Class.includes('placeholder') || p1.name === 'BYE' || p2.name === 'BYE';
+    const isDisabled = name1Class.includes('placeholder') || name2Class.includes('placeholder') || p1.name === 'Bye' || p2.name === 'Bye';
     const isByeMatch = p1.isBye || p2.isBye;
     let scoreInputsHTML = '';
 
@@ -119,7 +116,6 @@ function drawConnectors(targetSelector) {
             const wrapperRect = wrapper.getBoundingClientRect();
             const startY = matchRect.top + matchRect.height / 2 - wrapperRect.top;
             
-            // Linha para a direita (saindo da partida)
             if (r < rounds.length - 1) {
                 const isChampionBox = !!match.querySelector('rect[fill="#041A4A"]');
                 if(!isChampionBox) {
@@ -129,7 +125,6 @@ function drawConnectors(targetSelector) {
                 }
             }
             
-            // Linha para a esquerda (entrando na partida)
             if (r > 0) {
                 const endX = matchRect.left - wrapperRect.left;
                 const startX = endX - horizontalMidpoint;
