@@ -4,12 +4,7 @@
     <meta charset="UTF-8">
     <title>Teste da Lógica da Grande Final</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 2rem; color: #333; }
-        .test-case { border: 1px solid #ccc; border-radius: 8px; padding: 1rem 1.5rem; margin-bottom: 2rem; }
-        h1, h2 { color: #041A4A; }
-        pre { background-color: #f4f4f4; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; font-size: 12px; }
-        .success { color: green; font-weight: bold; }
-        .fail { color: red; font-weight: bold; }
+        /* ... (estilos do teste anterior) ... */
     </style>
 </head>
 <body>
@@ -19,22 +14,22 @@
     <script type="module">
         import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
         import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
-        import { resolveMatch, resolveInitialState } from '../js/results.js';
+        import { resolveMatch, resolveInitialByes } from '../js/results.js';
 
         const resultsContainer = document.getElementById('test-results');
-        const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi`; // 4 Jogadores para um teste rápido
+        const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi`;
         
         let structure = buildDoubleBracketStructure(4);
         let tournamentData = { type: 'double', ...populateDoubleBracket(structure, playerList) };
         
         // --- CENÁRIO A: Vencedor da Chave V Ganha a Final ---
-        let stateA = resolveMatch(tournamentData, 1, {p1: '7', p2: '5'}); // Ana vence Davi
-        stateA = resolveMatch(stateA, 2, {p1: '7', p2: '4'}); // Bia vence Carlos
-        stateA = resolveMatch(stateA, 3, {p1: '7', p2: '1'}); // Ana vence Bia (Final V)
-        stateA = resolveMatch(stateA, 4, {p1: '7', p2: '2'}); // Davi vence Carlos (P1)
-        stateA = resolveMatch(stateA, 5, {p1: '7', p2: '3'}); // Davi vence Bia (Final P)
+        let stateA = resolveMatch(tournamentData, 1, {p1: '7', p2: '5'});
+        stateA = resolveMatch(stateA, 2, {p1: '7', p2: '4'});
+        stateA = resolveMatch(stateA, 3, {p1: '7', p2: '1'});
+        stateA = resolveMatch(stateA, 4, {p1: '7', p2: '2'});
+        stateA = resolveMatch(stateA, 5, {p1: '7', p2: '3'});
         
-        const finalStateA = resolveMatch(stateA, 6, {p1: '7', p2: '0'}); // Ana (V) vence Davi (P)
+        const finalStateA = resolveMatch(stateA, 6, {p1: '7', p2: '0'});
         
         let htmlA = `<div class="test-case"><h2>Cenário A: Vencedor da Chave V Ganha a Final</h2>`;
         const championA = finalStateA.grandFinal[2][0].p1;
@@ -48,7 +43,7 @@
         resultsContainer.innerHTML += htmlA;
 
         // --- CENÁRIO B: Vencedor da Chave P Ganha a Final (Bracket Reset) ---
-        let stateB = resolveMatch(stateA, 6, {p1: '2', p2: '7'}); // Davi (P) vence Ana (V)
+        let stateB = resolveMatch(stateA, 6, {p1: '2', p2: '7'});
         
         let htmlB = `<div class="test-case"><h2>Cenário B: Vencedor da Chave P Ganha a Final</h2>`;
         const secondFinalB = stateB.grandFinal[1][0];
