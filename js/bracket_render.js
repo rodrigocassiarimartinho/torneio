@@ -1,4 +1,4 @@
-// js/bracket_render.js - Versão com correção do layout da caixa do campeão
+// js/bracket_render.js - Versão com correção do layout da caixa do campeão e correção de sintaxe
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -12,7 +12,6 @@ const CONFIG = {
 };
 
 function createMatchSVG(matchData) {
-    // --- INÍCIO DA CORREÇÃO ---
     // Adiciona um bloco de código específico para a caixa do campeão
     if (matchData.isChampionBox) {
         const winner = matchData.p1 || { name: 'Aguardando...', isPlaceholder: true };
@@ -27,8 +26,6 @@ function createMatchSVG(matchData) {
             </svg>
         `;
     }
-    // --- FIM DA CORREÇÃO ---
-
 
     const p1_Y = 18, p2_Y = 47;
     let p1 = { name: 'BYE', seed: null, ...matchData.p1 };
@@ -117,8 +114,7 @@ function drawConnectors(targetSelector) {
             
             // Linha para a direita (saindo da partida)
             if (r < rounds.length - 1) {
-                // Não desenha conector de saída para a caixa do campeão
-                const isChampionBox = match.querySelector('svg rect[fill="#D9A42A"]') && !match.querySelector('.svg-text-id');
+                const isChampionBox = !!match.querySelector('text:first-of-type[font-weight="600"]');
                 if(!isChampionBox) {
                     const startX = matchRect.right - wrapperRect.left;
                     const endX = startX + horizontalMidpoint;
@@ -180,4 +176,40 @@ function updateDropdownValues(roundsData, targetSelector) {
         const playerSlot = select.dataset.playerSlot;
         const match = allMatches.find(m => m && m.id === matchId);
         if (match && match[playerSlot] && match[playerSlot].score !== undefined) {
-            select.value = match[playerSlo
+            select.value = match[playerSlot].score;
+        } else {
+            select.value = "--";
+        }
+    });
+}
+
+export function runLayoutAndDraw(targetSelector, roundsData) {
+    layoutBracket(targetSelector);
+    window.requestAnimationFrame(() => {
+        drawConnectors(targetSelector);
+        updateDropdownValues(roundsData, targetSelector);
+    });
+}
+
+export function renderBracket(roundsData, targetSelector) {
+    const container = document.querySelector(targetSelector);
+    if (!container) return;
+    container.innerHTML = '';
+    if (!roundsData || roundsData.length === 0) return;
+
+    roundsData.forEach(roundData => {
+        const roundEl = document.createElement('div');
+        roundEl.className = 'round';
+        (roundData || []).forEach(matchData => {
+            if (!matchData) return;
+            const matchEl = document.createElement('div');
+            matchEl.className = 'match';
+            matchEl.id = `match-${matchData.id}`;
+            matchEl.innerHTML = createMatchSVG(matchData);
+            roundEl.appendChild(matchEl);
+        });
+        container.appendChild(roundEl);
+    });
+    
+    runLayoutAndDraw(targetSelector, roundsData);
+}
