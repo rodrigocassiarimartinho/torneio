@@ -1,4 +1,4 @@
-// js/bracket_render.js - Versão com correção do layout da caixa do campeão e correção de sintaxe
+// js/bracket_render.js - Versão final com todas as melhorias visuais
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -12,7 +12,7 @@ const CONFIG = {
 };
 
 function createMatchSVG(matchData) {
-    // Adiciona um bloco de código específico para a caixa do campeão
+    // Bloco de código específico para a caixa do campeão
     if (matchData.isChampionBox) {
         const winner = matchData.p1 || { name: 'Aguardando...', isPlaceholder: true };
         const winnerName = winner.name.length > 25 ? winner.name.substring(0, 22) + '...' : winner.name;
@@ -20,13 +20,14 @@ function createMatchSVG(matchData) {
 
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#D9A42A" stroke="#B88A22" stroke-width="1"/>
-                <text x="50%" y="22" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#041A4A">🏆 CAMPEÃO 🏆</text>
-                <text x="50%" y="47" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" fill="#041A4A">${winnerName}</text>
+                <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#041A4A" stroke="#041A4A" stroke-width="1"/>
+                <text x="50%" y="22" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="600" fill="#FFFFFF">CAMPEÃO</text>
+                <text x="50%" y="47" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" fill="#FFFFFF">${winnerName}</text>
             </svg>
         `;
     }
 
+    // Lógica para partidas normais
     const p1_Y = 18, p2_Y = 47;
     let p1 = { name: 'BYE', seed: null, ...matchData.p1 };
     let p2 = { name: 'BYE', seed: null, ...matchData.p2 };
@@ -47,12 +48,18 @@ function createMatchSVG(matchData) {
     let scoreOptions = `<option value="--">--</option><option value="WO">WO</option>`;
     for(let i = 0; i <= 31; i++) { scoreOptions += `<option value="${i}">${i}</option>`; }
 
+    // --- Lógica para ocultar placares em jogos com BYE ---
     const isDisabled = name1Class.includes('placeholder') || name2Class.includes('placeholder') || p1.name === 'BYE' || p2.name === 'BYE';
+    const isByeMatch = p1.isBye || p2.isBye;
+    let scoreInputsHTML = '';
 
-    const scoreInput1 = `<foreignObject x="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 7}" y="${p1_Y - CONFIG.SCORE_BOX_HEIGHT/2}" width="${CONFIG.SCORE_BOX_WIDTH}" height="${CONFIG.SCORE_BOX_HEIGHT}"><select class="score-select" data-match-id="${matchData.id}" data-player-slot="p1" ${isDisabled ? 'disabled' : ''}>${scoreOptions}</select></foreignObject>`;
-    const scoreInput2 = `<foreignObject x="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 7}" y="${p2_Y - CONFIG.SCORE_BOX_HEIGHT/2}" width="${CONFIG.SCORE_BOX_WIDTH}" height="${CONFIG.SCORE_BOX_HEIGHT}"><select class="score-select" data-match-id="${matchData.id}" data-player-slot="p2" ${isDisabled ? 'disabled' : ''}>${scoreOptions}</select></foreignObject>`;
+    if (!isByeMatch) {
+        const scoreInput1 = `<foreignObject x="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 7}" y="${p1_Y - CONFIG.SCORE_BOX_HEIGHT/2}" width="${CONFIG.SCORE_BOX_WIDTH}" height="${CONFIG.SCORE_BOX_HEIGHT}"><select class="score-select" data-match-id="${matchData.id}" data-player-slot="p1" ${isDisabled ? 'disabled' : ''}>${scoreOptions}</select></foreignObject>`;
+        const scoreInput2 = `<foreignObject x="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 7}" y="${p2_Y - CONFIG.SCORE_BOX_HEIGHT/2}" width="${CONFIG.SCORE_BOX_WIDTH}" height="${CONFIG.SCORE_BOX_HEIGHT}"><select class="score-select" data-match-id="${matchData.id}" data-player-slot="p2" ${isDisabled ? 'disabled' : ''}>${scoreOptions}</select></foreignObject>`;
+        scoreInputsHTML = scoreInput1 + scoreInput2;
+    }
 
-    return `<svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#E9ECEF" stroke="#DEE2E6" stroke-width="1"/><path d="M 0 6 C 0 2.686 2.686 0 6 0 H ${CONFIG.ID_COLUMN_WIDTH} V ${CONFIG.SVG_HEIGHT} H 6 C 2.686 ${CONFIG.SVG_HEIGHT} 0 ${CONFIG.SVG_HEIGHT-2.686} 0 ${CONFIG.SVG_HEIGHT-6} V 6 Z" fill="#D9A42A"/><text x="${CONFIG.ID_COLUMN_WIDTH / 2}" y="${CONFIG.SVG_HEIGHT / 2}" dominant-baseline="middle" text-anchor="middle" class="svg-text-id" fill="#041A4A">M${matchData.id}</text><line x1="${CONFIG.ID_COLUMN_WIDTH + 5}" y1="${CONFIG.SVG_HEIGHT / 2}" x2="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 20}" y2="${CONFIG.SVG_HEIGHT / 2}" stroke="#DEE2E6" stroke-width="1" stroke-dasharray="3 3"/><g>${seed1HTML}<text x="${nameX}" y="${p1_Y}" dominant-baseline="middle" class="${name1Class}" fill="#041A4A">${p1.name}</text></g><g>${seed2HTML}<text x="${nameX}" y="${p2_Y}" dominant-baseline="middle" class="${name2Class}" fill="#041A4A">${p2.name}</text></g>${scoreInput1}${scoreInput2}</svg>`;
+    return `<svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#E9ECEF" stroke="#DEE2E6" stroke-width="1"/><path d="M 0 6 C 0 2.686 2.686 0 6 0 H ${CONFIG.ID_COLUMN_WIDTH} V ${CONFIG.SVG_HEIGHT} H 6 C 2.686 ${CONFIG.SVG_HEIGHT} 0 ${CONFIG.SVG_HEIGHT-2.686} 0 ${CONFIG.SVG_HEIGHT-6} V 6 Z" fill="#D9A42A"/><text x="${CONFIG.ID_COLUMN_WIDTH / 2}" y="${CONFIG.SVG_HEIGHT / 2}" dominant-baseline="middle" text-anchor="middle" class="svg-text-id" fill="#041A4A">M${matchData.id}</text><line x1="${CONFIG.ID_COLUMN_WIDTH + 5}" y1="${CONFIG.SVG_HEIGHT / 2}" x2="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 20}" y2="${CONFIG.SVG_HEIGHT / 2}" stroke="#DEE2E6" stroke-width="1" stroke-dasharray="3 3"/><g>${seed1HTML}<text x="${nameX}" y="${p1_Y}" dominant-baseline="middle" class="${name1Class}" fill="#041A4A">${p1.name}</text></g><g>${seed2HTML}<text x="${nameX}" y="${p2_Y}" dominant-baseline="middle" class="${name2Class}" fill="#041A4A">${p2.name}</text></g>${scoreInputsHTML}</svg>`;
 }
 
 function layoutBracket(targetSelector) {
@@ -114,7 +121,7 @@ function drawConnectors(targetSelector) {
             
             // Linha para a direita (saindo da partida)
             if (r < rounds.length - 1) {
-                const isChampionBox = !!match.querySelector('text:first-of-type[font-weight="600"]');
+                const isChampionBox = !!match.querySelector('rect[fill="#041A4A"]');
                 if(!isChampionBox) {
                     const startX = matchRect.right - wrapperRect.left;
                     const endX = startX + horizontalMidpoint;
