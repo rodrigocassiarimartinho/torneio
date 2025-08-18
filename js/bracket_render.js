@@ -12,11 +12,13 @@ const CONFIG = {
 };
 
 function createMatchSVG(matchData) {
+    // Bloco de código específico para a caixa do campeão
     if (matchData.isChampionBox) {
         const winner = matchData.p1 || { name: 'TBD', isPlaceholder: true };
         const winnerName = winner.name.length > 25 ? winner.name.substring(0, 22) + '...' : winner.name;
         const nameClass = winner.isPlaceholder ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
 
+        // CORREÇÕES APLICADAS AQUI:
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
                 <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#041A4A" stroke="#041A4A" stroke-width="1"/>
@@ -26,6 +28,7 @@ function createMatchSVG(matchData) {
         `;
     }
 
+    // Lógica para partidas normais
     const p1_Y = 18, p2_Y = 47;
     let p1 = { name: 'Bye', seed: null, ...matchData.p1 };
     let p2 = { name: 'Bye', seed: null, ...matchData.p2 };
