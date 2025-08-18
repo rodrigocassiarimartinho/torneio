@@ -1,4 +1,4 @@
-// js/main.js - Versão Final e Integrada (Estratégia 4.0)
+// js/main.js - Versão com chamada ao novo motor de estabilização
 
 // Importa apenas os "chefes de departamento" de cada módulo validado
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
@@ -8,7 +8,7 @@ import { populateDoubleBracket } from './logic/double_player_logic.js';
 import { renderBracket } from './bracket_render.js';
 import { parsePlayerInput } from './parsing.js';
 import { setupInteractivity } from './interactivity.js';
-import { resolveInitialByes } from './results.js';
+import { stabilizeBracket } from './results.js'; // <<-- MUDANÇA AQUI
 
 // Variável de estado global
 let currentTournamentData = {};
@@ -53,8 +53,10 @@ function startTournament() {
         populatedBracket = populateDoubleBracket(structure, playerInput);
     }
     
-    // Resolve os byes iniciais antes de definir o estado final
-    const finalInitialState = resolveInitialByes(populatedBracket);
+    // **INÍCIO DA MUDANÇA**
+    // Resolve os byes iniciais e qualquer cascata antes de definir o estado final
+    const finalInitialState = stabilizeBracket(populatedBracket);
+    // **FIM DA MUDANÇA**
     setTournamentData(finalInitialState);
     
     fullRender();
@@ -79,10 +81,7 @@ function fullRender() {
     } else if (currentTournamentData.type === 'double') {
         renderBracket(currentTournamentData.winnersBracket, '#winners-bracket-matches');
         renderBracket(currentTournamentData.losersBracket, '#losers-bracket-matches');
-        // **INÍCIO DA CORREÇÃO**
-        // O Maestro agora sabe como renderizar a Grande Final
         renderBracket(currentTournamentData.grandFinal, '#final-bracket-matches');
-        // **FIM DA CORREÇÃO**
     }
 }
 
