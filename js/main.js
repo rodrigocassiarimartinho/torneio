@@ -19,7 +19,6 @@ const setTournamentData = (newData) => {
     currentTournamentData = newData;
 };
 
-
 // --- FUNÇÕES DE ORQUESTRAÇÃO ---
 
 function startTournament() {
@@ -45,19 +44,17 @@ function startTournament() {
     mainBracketTitle.textContent = 'Chave dos Vencedores';
     
     // Orquestração da criação da chave
-    let initialData;
+    let populatedBracket;
     if (tournamentType === 'single') {
         const structure = buildSingleBracketStructure(playerCount);
-        initialData = populateSingleBracket(structure, playerInput);
-        initialData.type = 'single'; // Adiciona a "etiqueta" de tipo
+        populatedBracket = populateSingleBracket(structure, playerInput);
     } else {
         const structure = buildDoubleBracketStructure(playerCount);
-        initialData = populateDoubleBracket(structure, playerInput);
-        initialData.type = 'double'; // Adiciona a "etiqueta" de tipo
+        populatedBracket = populateDoubleBracket(structure, playerInput);
     }
     
-    // Resolve os byes iniciais no estado já populado e etiquetado
-    const finalInitialState = resolveInitialByes(initialData);
+    // Resolve os byes iniciais antes de definir o estado final
+    const finalInitialState = resolveInitialByes(populatedBracket);
     setTournamentData(finalInitialState);
     
     fullRender();
@@ -82,10 +79,12 @@ function fullRender() {
     } else if (currentTournamentData.type === 'double') {
         renderBracket(currentTournamentData.winnersBracket, '#winners-bracket-matches');
         renderBracket(currentTournamentData.losersBracket, '#losers-bracket-matches');
+        // **INÍCIO DA CORREÇÃO**
+        // O Maestro agora sabe como renderizar a Grande Final
         renderBracket(currentTournamentData.grandFinal, '#final-bracket-matches');
+        // **FIM DA CORREÇÃO**
     }
 }
-
 
 // --- INICIALIZAÇÃO ---
 document.getElementById('generate-btn').addEventListener('click', startTournament);
