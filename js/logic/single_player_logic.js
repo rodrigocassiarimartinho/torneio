@@ -1,5 +1,5 @@
 // js/logic/single_player_logic.js
-import { getNextPowerOfTwo } from '../math.js'; // CAMINHO CORRIGIDO
+import { getNextPowerOfTwo } from '../math.js';
 import { generateSeedOrder, shuffleArray } from '../utils.js';
 import { parsePlayerInput } from '../parsing.js';
 
@@ -12,9 +12,9 @@ export function populateSingleBracket(structure, playerList) {
     const seeds = [...seededPlayers];
     let others = [...unseededPlayers];
     const byes = Array.from({ length: byesCount }, (_, i) => ({ name: `BYE_${i + 1}`, isBye: true }));
-
     let playerSlots = new Array(bracketSize).fill(null);
 
+    // Passo 3: Posicionar Cabeças de Chave
     const numSeeds = seeds.length > 0 ? getNextPowerOfTwo(seeds.length) : 0;
     if (numSeeds > 0) {
         const seedOrder = generateSeedOrder(numSeeds);
@@ -28,15 +28,31 @@ export function populateSingleBracket(structure, playerList) {
             }
         });
     }
-    
+
+    // Passo 4: Distribuição Prioritária de Byes
+    let byesToDistribute = [...byes];
+    seeds.forEach(seed => {
+        if (byesToDistribute.length > 0) {
+            const p_slot = playerSlots.findIndex(p => p && p.seed === seed.seed);
+            if (p_slot !== -1) {
+                const o_slot = (p_slot % 2 === 0) ? p_slot + 1 : p_slot - 1;
+                if (playerSlots[o_slot] === null) {
+                    playerSlots[o_slot] = byesToDistribute.shift();
+                }
+            }
+        }
+    });
+
+    // Passo 5: Distribuição de "Jogadores Âncora"
     shuffleArray(others);
     for (let i = 0; i < bracketSize; i += 2) {
-        if (playerSlots[i] === null && others.length > 0) {
+        if (playerSlots[i] === null && playerSlots[i+1] === null && others.length > 0) {
             playerSlots[i] = others.shift();
         }
     }
 
-    const finalDistributionPool = [...others, ...byes];
+    // Passo 6 & 7: Sorteio e Preenchimento Final
+    const finalDistributionPool = [...others, ...byesToDistribute];
     shuffleArray(finalDistributionPool);
     for (let i = 0; i < bracketSize; i++) {
         if (playerSlots[i] === null) {
