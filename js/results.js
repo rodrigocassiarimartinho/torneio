@@ -1,16 +1,13 @@
-// js/results.js - Versão com a exportação corrigida
+// js/results.js - Versão com a lógica da Grande Final corrigida
 
 import { getLoserDestinationRound } from './math.js';
 
+// --- Funções Auxiliares (inalteradas) ---
 function findMatchAndRoundIndex(rounds, matchId) {
     if (!rounds) return { match: null, round: null, roundIndex: -1 };
     for (let i = 0; i < rounds.length; i++) {
         const round = rounds[i];
-        if (round) {
-            for (const match of round) {
-                if (match && match.id === matchId) { return { match, round, roundIndex: i }; }
-            }
-        }
+        if (round) { for (const match of round) { if (match && match.id === matchId) return { match, round, roundIndex: i }; } }
     }
     return { match: null, round: null, roundIndex: -1 };
 }
@@ -34,10 +31,8 @@ function findMatchInTournament(matchId, tournamentData) {
 function _determineWinner(match) {
     let winner = null, loser = null;
     const p1 = match.p1, p2 = match.p2;
-    if (p1?.isBye) { winner = p2; loser = p1; }
-    else if (p2?.isBye) { winner = p1; loser = p2; }
+    if (p2?.score === 'WO') { winner = p1; loser = p2; }
     else if (p1?.score === 'WO') { winner = p2; loser = p1; }
-    else if (p2?.score === 'WO') { winner = p1; loser = p2; }
     else {
         const score1 = parseInt(p1?.score), score2 = parseInt(p2?.score);
         if (!isNaN(score1) && !isNaN(score2) && score1 !== score2) {
@@ -62,9 +57,10 @@ function _advancePlayer(player, placeholder, data) {
     }
 }
 
+// --- Funções Principais Exportadas ---
 export function resolveMatch(tournamentData, matchId, scores) {
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
-    const { match, bracketName } = findMatchInTournament(matchId, dataCopy);
+    const { match, bracketName, bracket, roundIndex } = findMatchInTournament(matchId, dataCopy);
     if (!match) return dataCopy;
 
     if (match.p1) match.p1.score = scores.p1;
@@ -73,27 +69,31 @@ export function resolveMatch(tournamentData, matchId, scores) {
     const { winner, loser } = _determineWinner(match);
 
     if (winner) {
+        // **INÍCIO DA CORREÇÃO**
         // LÓGICA ESPECIAL PARA A GRANDE FINAL
-        if (bracketName === 'grandFinal' && dataCopy.grandFinal[0].some(m => m.id === match.id)) {
-            if (winner.name === match.p2.name) {
+        if (bracketName === 'grandFinal' && roundIndex === 0) { // Se for a PRIMEIRA final
+            const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
+            if (winnerIsFromWinnersBracket) {
+                // Cenário A: Vencedor da Vence
+                const championBox = dataCopy.grandFinal[2][0];
+                _advancePlayer(winner, championBox.p1.name, dataCopy); // Avança direto para a caixa do campeão
+            } else {
+                // Cenário B: Vencedor da Perde (Bracket Reset)
                 _advancePlayer(winner, `Winner of M${match.id}`, dataCopy);
                 _advancePlayer(loser, `Loser of M${match.id}`, dataCopy);
-            } else {
-                _advancePlayer(winner, `Winner of M${match.id}`, dataCopy);
             }
-        } else {
+        } else { // Lógica normal para as outras partidas
             _advancePlayer(winner, `Winner of M${match.id}`, dataCopy);
             if (dataCopy.type === 'double' && bracketName === 'winnersBracket' && loser) {
                 _advancePlayer(loser, `Loser of M${match.id}`, dataCopy);
             }
         }
+        // **FIM DA CORREÇÃO**
     }
     return dataCopy;
 }
 
-// **INÍCIO DA CORREÇÃO**
 export function resolveInitialByes(tournamentData) {
-// **FIM DA CORREÇÃO**
     let dataCopy = JSON.parse(JSON.stringify(tournamentData));
     const firstRound = (dataCopy.type === 'single') ? dataCopy.rounds[0] : dataCopy.winnersBracket[0];
     
