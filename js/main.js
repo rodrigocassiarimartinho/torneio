@@ -1,6 +1,5 @@
-// js/main.js - Versão com chamada ao novo motor de estabilização
+// js/main.js - Versão com título em inglês
 
-// Importa apenas os "chefes de departamento" de cada módulo validado
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
 import { populateSingleBracket } from './logic/single_player_logic.js';
@@ -8,18 +7,14 @@ import { populateDoubleBracket } from './logic/double_player_logic.js';
 import { renderBracket } from './bracket_render.js';
 import { parsePlayerInput } from './parsing.js';
 import { setupInteractivity } from './interactivity.js';
-import { stabilizeBracket } from './results.js'; // <<-- MUDANÇA AQUI
+import { stabilizeBracket } from './results.js';
 
-// Variável de estado global
 let currentTournamentData = {};
 
-// Funções "getter" e "setter" para o estado, para manter a modularidade
 const getTournamentData = () => currentTournamentData;
 const setTournamentData = (newData) => {
     currentTournamentData = newData;
 };
-
-// --- FUNÇÕES DE ORQUESTRAÇÃO ---
 
 function startTournament() {
     const playerInput = document.getElementById('player-list').value;
@@ -29,21 +24,25 @@ function startTournament() {
     const playerCount = unseededPlayers.length + seededPlayers.length;
 
     if (playerCount < 2) {
-        alert("Por favor, insira pelo menos 2 jogadores.");
+        alert("Please enter at least 2 players.");
         return;
     }
 
-    // Prepara a interface
     document.getElementById('setup').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
     document.getElementById('winners-bracket-container').style.display = 'block';
     document.getElementById('losers-bracket-container').style.display = tournamentType === 'double' ? 'block' : 'none';
     document.getElementById('grand-final-container').style.display = tournamentType === 'double' ? 'block' : 'none';
-    const mainBracketTitle = document.getElementById('main-bracket-title');
-    mainBracketTitle.style.display = tournamentType === 'double' ? 'block' : 'none';
-    mainBracketTitle.textContent = 'Chave dos Vencedores';
     
-    // Orquestração da criação da chave
+    const mainBracketTitle = document.getElementById('main-bracket-title');
+    mainBracketTitle.style.display = 'block'; // Garante que o título seja sempre visível
+    
+    if (tournamentType === 'double') {
+        mainBracketTitle.textContent = 'Winners Bracket';
+    } else {
+        mainBracketTitle.textContent = 'Main Bracket';
+    }
+    
     let populatedBracket;
     if (tournamentType === 'single') {
         const structure = buildSingleBracketStructure(playerCount);
@@ -53,10 +52,7 @@ function startTournament() {
         populatedBracket = populateDoubleBracket(structure, playerInput);
     }
     
-    // **INÍCIO DA MUDANÇA**
-    // Resolve os byes iniciais e qualquer cascata antes de definir o estado final
     const finalInitialState = stabilizeBracket(populatedBracket);
-    // **FIM DA MUDANÇA**
     setTournamentData(finalInitialState);
     
     fullRender();
@@ -85,11 +81,9 @@ function fullRender() {
     }
 }
 
-// --- INICIALIZAÇÃO ---
 document.getElementById('generate-btn').addEventListener('click', startTournament);
 document.getElementById('reset-btn').addEventListener('click', resetTournament);
 
-// A interatividade é "ligada" uma única vez, passando as funções de controlo
 setupInteractivity(getTournamentData, setTournamentData, fullRender);
 
 window.addEventListener('resize', () => {
