@@ -14,7 +14,9 @@
     <script type="module">
         import { buildDoubleBracketStructure } from '../js/structures/double_bracket_structure.js';
         import { populateDoubleBracket } from '../js/logic/double_player_logic.js';
+        // **INÍCIO DA CORREÇÃO**
         import { resolveMatch, resolveInitialByes } from '../js/results.js';
+        // **FIM DA CORREÇÃO**
 
         const resultsContainer = document.getElementById('test-results');
         const playerList = `1. Ana\n2. Bia\n3. Carlos\n4. Davi`;
@@ -25,11 +27,11 @@
         // --- CENÁRIO A: Vencedor da Chave V Ganha a Final ---
         let stateA = resolveMatch(tournamentData, 1, {p1: '7', p2: '5'});
         stateA = resolveMatch(stateA, 2, {p1: '7', p2: '4'});
-        stateA = resolveMatch(stateA, 3, {p1: '7', p2: '1'});
-        stateA = resolveMatch(stateA, 4, {p1: '7', p2: '2'});
-        stateA = resolveMatch(stateA, 5, {p1: '7', p2: '3'});
+        stateA = resolveMatch(stateA, 3, {p1: '7', p2: '1'}); // Final V: Ana vence Bia
+        stateA = resolveMatch(stateA, 4, {p1: '7', p2: '2'}); // P1: Hugo vence Carlos (assumido) -> Davi vence Gabi
+        stateA = resolveMatch(stateA, 5, {p1: '7', p2: '3'}); // Final P: Davi vence Bia
         
-        const finalStateA = resolveMatch(stateA, 6, {p1: '7', p2: '0'});
+        const finalStateA = resolveMatch(stateA, 6, {p1: '7', p2: '0'}); // Final 1: Ana (V) vence Davi (P)
         
         let htmlA = `<div class="test-case"><h2>Cenário A: Vencedor da Chave V Ganha a Final</h2>`;
         const championA = finalStateA.grandFinal[2][0].p1;
@@ -43,7 +45,7 @@
         resultsContainer.innerHTML += htmlA;
 
         // --- CENÁRIO B: Vencedor da Chave P Ganha a Final (Bracket Reset) ---
-        let stateB = resolveMatch(stateA, 6, {p1: '2', p2: '7'});
+        let stateB = resolveMatch(stateA, 6, {p1: '2', p2: '7'}); // Final 1: Davi (P) vence Ana (V)
         
         let htmlB = `<div class="test-case"><h2>Cenário B: Vencedor da Chave P Ganha a Final</h2>`;
         const secondFinalB = stateB.grandFinal[1][0];
