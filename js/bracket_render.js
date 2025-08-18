@@ -1,4 +1,4 @@
-// js/bracket_render.js - Versão Final e Definitiva (Estratégia 4.0)
+// js/bracket_render.js - Versão com o estilo final da Caixa do Campeão
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -12,16 +12,23 @@ const CONFIG = {
 };
 
 function createMatchSVG(matchData) {
-    // **LÓGICA DA CAIXA DO CAMPEÃO**
+    // **INÍCIO DA LÓGICA DA CAIXA DO CAMPEÃO**
     if (matchData.isChampionBox) {
         const p1 = { name: '(Vazio)', ...matchData.p1 };
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#041A4A" stroke="#D9A42A" stroke-width="1"/>
+                <defs>
+                    <linearGradient id="championGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0A2F78;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#041A4A;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="url(#championGradient)" stroke="#D9A42A" stroke-width="2"/>
                 <text x="${CONFIG.SVG_WIDTH / 2}" y="22" dominant-baseline="middle" text-anchor="middle" class="svg-text-name" fill="#FFFFFF" font-weight="bold">Campeão</text>
                 <text x="${CONFIG.SVG_WIDTH / 2}" y="48" dominant-baseline="middle" text-anchor="middle" class="svg-text-name" fill="#FFFFFF">${p1.name}</text>
             </svg>`;
     }
+    // **FIM DA LÓGICA**
 
     const p1_Y = 18, p2_Y = 47;
     let p1 = { name: '(Vazio)', seed: null, ...matchData.p1 };
@@ -150,25 +157,14 @@ function createLine(x1, y1, x2, y2, svg) {
     svg.appendChild(path);
 }
 
-export function runLayoutAndDraw(targetSelector, roundsData) {
-    layoutBracket(targetSelector);
-    window.requestAnimationFrame(() => {
-        drawConnectors(targetSelector);
-        // A função de update dos placares será reativada na etapa de interatividade
-    });
-}
-
 export function renderBracket(roundsData, targetSelector) {
     const container = document.querySelector(targetSelector);
-    if (!container) {
-        console.error("Container de renderização não encontrado:", targetSelector);
-        return;
-    }
+    if (!container) return;
     container.innerHTML = '';
     
     if (!roundsData || roundsData.length === 0) return;
 
-    roundsData.forEach(roundData => {
+    roundsData.forEach((roundData, roundIndex) => {
         const roundEl = document.createElement('div');
         roundEl.className = 'round';
         (roundData || []).forEach(matchData => {
@@ -182,5 +178,8 @@ export function renderBracket(roundsData, targetSelector) {
         container.appendChild(roundEl);
     });
     
-    runLayoutAndDraw(targetSelector, roundsData);
+    layoutBracket(targetSelector);
+    window.requestAnimationFrame(() => {
+        drawConnectors(targetSelector);
+    });
 }
