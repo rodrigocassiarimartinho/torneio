@@ -31,7 +31,7 @@ export function populateDoubleBracket(structure, playerList) {
 
     // Passo 4: Distribuição Prioritária de Byes
     let byesToDistribute = [...byes];
-    seeds.forEach(seed => {
+    seeds.sort((a, b) => a.seed - b.seed).forEach(seed => {
         if (byesToDistribute.length > 0) {
             const p_slot = playerSlots.findIndex(p => p && p.seed === seed.seed);
             if (p_slot !== -1) {
