@@ -1,4 +1,4 @@
-// js/main.js - Versão com lógica de Undo e logs de depuração
+// js/main.js - Versão Orquestrador de UI
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -7,20 +7,15 @@ import { populateDoubleBracket } from './logic/double_player_logic.js';
 import { renderBracket } from './bracket_render.js';
 import { parsePlayerInput } from './parsing.js';
 import { setupInteractivity } from './interactivity.js';
-import { stabilizeBracket } from './results.js';
+import * as tournamentEngine from './results.js'; // Importa o motor inteiro
 
-let currentTournamentData = {};
-let undoHistory = [];
-
-const getTournamentData = () => currentTournamentData;
-const setTournamentData = (newData) => {
-    currentTournamentData = newData;
-};
+function updateButtonStates() {
+    const { canUndo, canRedo } = tournamentEngine.getHistoryState();
+    document.getElementById('undo-btn').disabled = !canUndo;
+    document.getElementById('redo-btn').disabled = !canRedo;
+}
 
 function startTournament() {
-    undoHistory = [];
-    document.getElementById('undo-btn').disabled = true;
-
     const playerInput = document.getElementById('player-list').value;
     const tournamentType = document.querySelector('input[name="bracket-type"]:checked').value;
     
@@ -34,9 +29,6 @@ function startTournament() {
 
     document.getElementById('setup').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
-    document.getElementById('winners-bracket-container').style.display = 'block';
-    document.getElementById('losers-bracket-container').style.display = tournamentType === 'double' ? 'block' : 'none';
-    document.getElementById('grand-final-container').style.display = tournamentType === 'double' ? 'block' : 'none';
     
     const mainBracketTitle = document.getElementById('main-bracket-title');
     mainBracketTitle.style.display = 'block';
@@ -56,18 +48,13 @@ function startTournament() {
         populatedBracket = populateDoubleBracket(structure, playerInput);
     }
     
-    const finalInitialState = stabilizeBracket(populatedBracket);
-    setTournamentData(finalInitialState);
-    
+    tournamentEngine.initializeBracket(populatedBracket);
     fullRender();
 }
 
 function resetTournament() {
     if (confirm("Are you sure you want to reset the entire tournament? This action cannot be undone.")) {
-        currentTournamentData = {};
-        undoHistory = [];
-        document.getElementById('undo-btn').disabled = true;
-
+        // A lógica de reset agora está implícita no startTournament
         document.getElementById('app-container').style.display = 'none';
         document.getElementById('setup').style.display = 'block';
         document.getElementById('player-list').value = '';
@@ -75,40 +62,44 @@ function resetTournament() {
         document.getElementById('winners-bracket-matches').innerHTML = '';
         document.getElementById('losers-bracket-matches').innerHTML = '';
         document.getElementById('final-bracket-matches').innerHTML = '';
+
+        updateButtonStates();
     }
 }
 
 function fullRender() {
-    if (!currentTournamentData.type) return;
+    const currentData = tournamentEngine.getCurrentData();
+    if (!currentData.type) return;
 
-    if (currentTournamentData.type === 'single') {
-        renderBracket(currentTournamentData.rounds, '#winners-bracket-matches');
-    } else if (currentTournamentData.type === 'double') {
-        renderBracket(currentTournamentData.winnersBracket, '#winners-bracket-matches');
-        renderBracket(currentTournamentData.losersBracket, '#losers-bracket-matches');
-        renderBracket(currentTournamentData.grandFinal, '#final-bracket-matches');
+    if (currentData.type === 'single') {
+        renderBracket(currentData.rounds, '#winners-bracket-matches');
+    } else if (currentData.type === 'double') {
+        renderBracket(currentData.winnersBracket, '#winners-bracket-matches');
+        renderBracket(currentData.losersBracket, '#losers-bracket-matches');
+        renderBracket(currentData.grandFinal, '#final-bracket-matches');
     }
+    updateButtonStates();
 }
 
-function undoLastAction() {
-    console.log("Botão Undo clicado. Histórico atual:", undoHistory); // DEBUG
-    if (undoHistory.length > 0) {
-        const previousState = undoHistory.pop();
-        console.log("Restaurando para o estado:", previousState); // DEBUG
-        setTournamentData(previousState);
-        fullRender();
-    }
-    
-    document.getElementById('undo-btn').disabled = undoHistory.length === 0;
+function undoAction() {
+    tournamentEngine.undo();
+    fullRender();
+}
+
+function redoAction() {
+    tournamentEngine.redo();
+    fullRender();
 }
 
 document.getElementById('generate-btn').addEventListener('click', startTournament);
 document.getElementById('reset-btn').addEventListener('click', resetTournament);
-document.getElementById('undo-btn').addEventListener('click', undoLastAction);
+document.getElementById('undo-btn').addEventListener('click', undoAction);
+document.getElementById('redo-btn').addEventListener('click', redoAction);
 
-setupInteractivity(getTournamentData, setTournamentData, fullRender, undoHistory);
+setupInteractivity(fullRender); // Passa apenas a função de renderização
 
 window.addEventListener('resize', () => {
-    if (!currentTournamentData.type) return;
+    const currentData = tournamentEngine.getCurrentData();
+    if (!currentData.type) return;
     fullRender();
 });
