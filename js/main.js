@@ -1,4 +1,4 @@
-// js/main.js - Versão com log de depuração para o problema de renderização
+// js/main.js - Versão com a correção final da visibilidade dos contêineres
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -30,6 +30,13 @@ function startTournament() {
     document.getElementById('setup').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
     
+    // --- INÍCIO DA CORREÇÃO ---
+    // Estas linhas cruciais foram restauradas
+    document.getElementById('winners-bracket-container').style.display = 'block';
+    document.getElementById('losers-bracket-container').style.display = tournamentType === 'double' ? 'block' : 'none';
+    document.getElementById('grand-final-container').style.display = tournamentType === 'double' ? 'block' : 'none';
+    // --- FIM DA CORREÇÃO ---
+    
     const mainBracketTitle = document.getElementById('main-bracket-title');
     mainBracketTitle.style.display = 'block';
     
@@ -48,10 +55,6 @@ function startTournament() {
         populatedBracket = populateDoubleBracket(structure, playerInput);
     }
     
-    // --- INÍCIO DA MUDANÇA (DEBUG) ---
-    console.log("Objeto da chave ANTES de entrar no motor:", JSON.parse(JSON.stringify(populatedBracket)));
-    // --- FIM DA MUDANÇA (DEBUG) ---
-
     tournamentEngine.initializeBracket(populatedBracket);
     fullRender();
 }
