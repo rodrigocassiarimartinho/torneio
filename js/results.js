@@ -1,9 +1,14 @@
-// js/results.js - Versão com log de depuração para o problema de renderização
+// js/results.js - Versão com a correção final no _findMatchInTournament
 
+// --- ESTADO INTERNO DO MÓDULO ---
 let currentTournamentData = {};
 let undoHistory = [];
 let redoHistory = [];
 
+// --- FUNÇÕES "PRIVADAS" DO MÓDULO ---
+
+// **INÍCIO DA CORREÇÃO**
+// Esta é a versão correta e robusta da função
 function _findMatchInTournament(matchId, tournamentData) {
     if (tournamentData.type === 'single') {
         for (const round of (tournamentData.rounds || [])) {
@@ -32,6 +37,7 @@ function _findMatchInTournament(matchId, tournamentData) {
     }
     return { match: null, bracketName: null };
 }
+// **FIM DA CORREÇÃO**
 
 function _determineWinner(match) {
     let winner = null, loser = null;
@@ -131,13 +137,12 @@ function _stabilizeBracket(data) {
     return dataCopy;
 }
 
+// --- FUNÇÕES "PÚBLICAS" EXPORTADAS ---
+
 export function initializeBracket(populatedBracket) {
     undoHistory = [];
     redoHistory = [];
     currentTournamentData = _stabilizeBracket(populatedBracket);
-    // --- INÍCIO DA MUDANÇA (DEBUG) ---
-    console.log("Objeto da chave DEPOIS de sair do motor:", JSON.parse(JSON.stringify(currentTournamentData)));
-    // --- FIM DA MUDANÇA (DEBUG) ---
 }
 
 export function updateScore(matchId, playerSlot, newScore) {
