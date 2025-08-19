@@ -1,18 +1,9 @@
-// js/results.js - Versão Final Limpa e Comentada
-// Este módulo funciona como um "Motor de Torneio Stateful", gerenciando internamente
-// todo o estado da chave, incluindo o histórico para undo/redo.
+// js/results.js - Versão com a correção final do confronto Bye vs. Bye
 
-// --- ESTADO INTERNO DO MÓDULO ---
 let currentTournamentData = {};
 let undoHistory = [];
 let redoHistory = [];
 
-// --- FUNÇÕES "PRIVADAS" (AUXILIARES) ---
-
-/**
- * Encontra uma partida pelo ID dentro de toda a estrutura do torneio.
- * @returns {object} Um objeto contendo a partida e o nome do bracket onde ela foi encontrada.
- */
 function _findMatchInTournament(matchId, tournamentData) {
     if (tournamentData.type === 'single') {
         for (const round of (tournamentData.rounds || [])) {
@@ -42,10 +33,6 @@ function _findMatchInTournament(matchId, tournamentData) {
     return { match: null, bracketName: null };
 }
 
-/**
- * Determina o vencedor e o perdedor de uma partida com base nos placares.
- * @returns {object} Objeto com as chaves 'winner' e 'loser'.
- */
 function _determineWinner(match) {
     let winner = null, loser = null;
     const p1 = match.p1, p2 = match.p2;
@@ -61,9 +48,6 @@ function _determineWinner(match) {
     return { winner, loser };
 }
 
-/**
- * Avança um jogador para a próxima vaga que o espera (identificada por um placeholder).
- */
 function _advancePlayer(player, placeholder, data) {
     const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket, data.grandFinal];
     const playerData = { ...player };
@@ -84,12 +68,12 @@ function _advancePlayer(player, placeholder, data) {
     }
 }
 
-/**
- * Processa o resultado de uma única partida, avançando o vencedor e, se aplicável, o perdedor.
- */
 function _processMatchResult(data, match, bracketName) {
     const { winner, loser } = _determineWinner(match);
     if (winner) {
+        // Apenas jogadores reais são enviados para a chave dos perdedores
+        const shouldAdvanceLoser = data.type === 'double' && bracketName === 'winnersBracket' && loser && !loser.isBye;
+
         if (bracketName === 'grandFinal' && match.id === data.grandFinal[0][0].id) { 
             const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
             if (winnerIsFromWinnersBracket) {
@@ -97,11 +81,11 @@ function _processMatchResult(data, match, bracketName) {
                 _advancePlayer(winner, championBox.p1.name, data);
             } else {
                 _advancePlayer(winner, `Winner of M${match.id}`, data);
-                _advancePlayer(loser, `Loser of M${match.id}`, data);
+                if (loser && !loser.isBye) _advancePlayer(loser, `Loser of M${match.id}`, data);
             }
         } else {
             _advancePlayer(winner, `Winner of M${match.id}`, data);
-            if (data.type === 'double' && bracketName === 'winnersBracket' && loser) {
+            if (shouldAdvanceLoser) {
                 _advancePlayer(loser, `Loser of M${match.id}`, data);
             }
         }
@@ -111,10 +95,6 @@ function _processMatchResult(data, match, bracketName) {
     return false;
 }
 
-/**
- * O coração do motor: Roda em loop até que nenhuma nova alteração possa ser feita automaticamente (WOs ou avanços).
- * @returns {object} O novo objeto de torneio estável.
- */
 function _stabilizeBracket(data) {
     let dataCopy = JSON.parse(JSON.stringify(data));
     let changesMade;
@@ -127,22 +107,37 @@ function _stabilizeBracket(data) {
             { name: 'rounds', data: dataCopy.rounds }
         ];
 
-        // Fase 1: Atribui placares automáticos para partidas com BYE
+        // Fase 1: Atribui placares automáticos
         for (const bracketInfo of allBracketsInfo) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
                     if (!match || (match.p1 && match.p1.score !== undefined) || (match.p2 && match.p2.score !== undefined)) continue;
+                    
                     const p1_isBye = match.p1 && match.p1.isBye;
                     const p2_isBye = match.p2 && match.p2.isBye;
                     const p1_exists = match.p1 && !match.p1.isBye && !match.p1.isPlaceholder;
                     const p2_exists = match.p2 && !match.p2.isBye && !match.p2.isPlaceholder;
-                    if (p1_exists && p2_isBye) { match.p2.score = 'WO'; changesMade = true; } 
-                    else if (p2_exists && p1_isBye) { match.p1.score = 'WO'; changesMade = true; }
+
+                    // --- INÍCIO DA CORREÇÃO ---
+                    if (p1_exists && p2_isBye) { 
+                        match.p2.score = 'WO'; 
+                        changesMade = true;
+                    } 
+                    else if (p2_exists && p1_isBye) { 
+                        match.p1.score = 'WO'; 
+                        changesMade = true;
+                    }
+                    // Regra para Bye vs Bye: p1 avança para manter a estrutura
+                    else if (p1_isBye && p2_isBye) {
+                        match.p2.score = 'WO'; // p2 "perde"
+                        changesMade = true;
+                    }
+                    // --- FIM DA CORREÇÃO ---
                 }
             }
         }
 
-        // Fase 2: Processa os resultados de partidas que já têm placar
+        // Fase 2: Processa os resultados
         for (const bracketInfo of allBracketsInfo) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
@@ -156,30 +151,22 @@ function _stabilizeBracket(data) {
     return dataCopy;
 }
 
+// --- FUNÇÕES "PÚBLICAS" EXPORTADAS ---
 
-// --- FUNÇÕES "PÚBLICAS" EXPORTADAS (A INTERFACE DO MÓDULO) ---
-
-/**
- * Inicializa um novo torneio, limpando o estado anterior.
- */
 export function initializeBracket(populatedBracket) {
     undoHistory = [];
     redoHistory = [];
     currentTournamentData = _stabilizeBracket(populatedBracket);
 }
 
-/**
- * Ponto de entrada para uma atualização de placar feita pelo usuário.
- */
 export function updateScore(matchId, playerSlot, newScore) {
     const { match } = _findMatchInTournament(matchId, currentTournamentData);
     if (!match) return;
     
-    // Salva no histórico apenas na primeira interação com uma partida não pontuada
     const isFirstScoreInteraction = !(match.p1 && match.p1.score !== undefined) && !(match.p2 && match.p2.score !== undefined);
     if (isFirstScoreInteraction) {
         undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
-        redoHistory = []; // Limpa o "refazer" pois uma nova linha do tempo foi criada
+        redoHistory = [];
     }
 
     if (!match[playerSlot]) match[playerSlot] = {};
@@ -189,9 +176,6 @@ export function updateScore(matchId, playerSlot, newScore) {
     currentTournamentData = _stabilizeBracket(currentTournamentData);
 }
 
-/**
- * Reverte o estado do torneio para o ponto anterior.
- */
 export function undo() {
     if (undoHistory.length > 0) {
         redoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
@@ -199,9 +183,6 @@ export function undo() {
     }
 }
 
-/**
- * Avança o estado do torneio para um ponto que foi desfeito.
- */
 export function redo() {
     if (redoHistory.length > 0) {
         undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
@@ -209,16 +190,10 @@ export function redo() {
     }
 }
 
-/**
- * Retorna uma cópia segura do estado atual do torneio.
- */
 export function getCurrentData() {
     return JSON.parse(JSON.stringify(currentTournamentData));
 }
 
-/**
- * Retorna o estado dos históricos para a UI poder habilitar/desabilitar botões.
- */
 export function getHistoryState() {
     return {
         canUndo: undoHistory.length > 0,
