@@ -1,4 +1,6 @@
-// js/bracket_render.js - Versão final com a "cereja do bolo" no estilo do campeão
+// js/bracket_render.js - Versão Final Limpa e Comentada
+// Este módulo é responsável por toda a parte visual: desenhar
+// as partidas, os conectores e atualizar os placares na tela.
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -11,7 +13,13 @@ const CONFIG = {
     ROUND_GAP: 40,
 };
 
+/**
+ * Cria o código SVG para uma única partida ou para a caixa do campeão.
+ * @param {object} matchData O objeto da partida.
+ * @returns {string} O HTML do SVG a ser renderizado.
+ */
 function createMatchSVG(matchData) {
+    // Caso especial: Renderiza a caixa de campeão com um estilo único.
     if (matchData.isChampionBox) {
         const winner = matchData.p1 || { name: 'TBD', isPlaceholder: true };
         const winnerName = winner.name.length > 25 ? winner.name.substring(0, 22) + '...' : winner.name;
@@ -27,13 +35,13 @@ function createMatchSVG(matchData) {
                     stroke="#D9A42A" 
                     stroke-width="2"
                 />
-                {/* CORREÇÃO APLICADA AQUI */}
                 <text x="50%" y="24" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">Champion</text>
                 <text x="50%" y="46" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
             </svg>
         `;
     }
 
+    // Caminho Padrão: Renderiza uma partida normal com dois jogadores.
     const p1_Y = 18, p2_Y = 47;
     let p1 = { name: 'Bye', seed: null, ...matchData.p1 };
     let p2 = { name: 'Bye', seed: null, ...matchData.p2 };
@@ -67,6 +75,9 @@ function createMatchSVG(matchData) {
     return `<svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#E9ECEF" stroke="#DEE2E6" stroke-width="1"/><path d="M 0 6 C 0 2.686 2.686 0 6 0 H ${CONFIG.ID_COLUMN_WIDTH} V ${CONFIG.SVG_HEIGHT} H 6 C 2.686 ${CONFIG.SVG_HEIGHT} 0 ${CONFIG.SVG_HEIGHT-2.686} 0 ${CONFIG.SVG_HEIGHT-6} V 6 Z" fill="#D9A42A"/><text x="${CONFIG.ID_COLUMN_WIDTH / 2}" y="${CONFIG.SVG_HEIGHT / 2}" dominant-baseline="middle" text-anchor="middle" class="svg-text-id" fill="#041A4A">M${matchData.id}</text><line x1="${CONFIG.ID_COLUMN_WIDTH + 5}" y1="${CONFIG.SVG_HEIGHT / 2}" x2="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 20}" y2="${CONFIG.SVG_HEIGHT / 2}" stroke="#DEE2E6" stroke-width="1" stroke-dasharray="3 3"/><g>${seed1HTML}<text x="${nameX}" y="${p1_Y}" dominant-baseline="middle" class="${name1Class}" fill="#041A4A">${p1.name}</text></g><g>${seed2HTML}<text x="${nameX}" y="${p2_Y}" dominant-baseline="middle" class="${name2Class}" fill="#041A4A">${p2.name}</text></g>${scoreInputsHTML}</svg>`;
 }
 
+/**
+ * Calcula a posição vertical de cada partida dentro de sua respectiva rodada.
+ */
 function layoutBracket(targetSelector) {
     const matchesContainer = document.querySelector(targetSelector);
     if (!matchesContainer) return;
@@ -104,6 +115,9 @@ function layoutBracket(targetSelector) {
     svgEl.style.height = `${totalBracketHeight + 40}px`;
 }
 
+/**
+ * Desenha as linhas SVG que conectam as partidas entre as rodadas.
+ */
 function drawConnectors(targetSelector) {
     const matchesContainer = document.querySelector(targetSelector);
     if (!matchesContainer) return;
@@ -173,6 +187,9 @@ function createLine(x1, y1, x2, y2, svg) {
     svg.appendChild(path);
 }
 
+/**
+ * Garante que os valores nos dropdowns de placar reflitam o estado atual dos dados.
+ */
 function updateDropdownValues(roundsData, targetSelector) {
     if(!roundsData) return;
     const container = document.querySelector(targetSelector);
@@ -193,6 +210,9 @@ function updateDropdownValues(roundsData, targetSelector) {
     });
 }
 
+/**
+ * Orquestra as funções de layout e desenho, usando requestAnimationFrame para otimização.
+ */
 export function runLayoutAndDraw(targetSelector, roundsData) {
     layoutBracket(targetSelector);
     window.requestAnimationFrame(() => {
@@ -201,6 +221,9 @@ export function runLayoutAndDraw(targetSelector, roundsData) {
     });
 }
 
+/**
+ * Função principal exportada que renderiza um bracket inteiro em um container.
+ */
 export function renderBracket(roundsData, targetSelector) {
     const container = document.querySelector(targetSelector);
     if (!container) return;
