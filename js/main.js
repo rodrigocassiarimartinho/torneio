@@ -1,4 +1,4 @@
-// js/main.js - Versão com título em inglês
+// js/main.js - Versão com confirmação de Reset
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -35,7 +35,7 @@ function startTournament() {
     document.getElementById('grand-final-container').style.display = tournamentType === 'double' ? 'block' : 'none';
     
     const mainBracketTitle = document.getElementById('main-bracket-title');
-    mainBracketTitle.style.display = 'block'; // Garante que o título seja sempre visível
+    mainBracketTitle.style.display = 'block';
     
     if (tournamentType === 'double') {
         mainBracketTitle.textContent = 'Winners Bracket';
@@ -59,14 +59,18 @@ function startTournament() {
 }
 
 function resetTournament() {
-    currentTournamentData = {};
-    document.getElementById('app-container').style.display = 'none';
-    document.getElementById('setup').style.display = 'block';
-    document.getElementById('player-list').value = '';
-    
-    document.getElementById('winners-bracket-matches').innerHTML = '';
-    document.getElementById('losers-bracket-matches').innerHTML = '';
-    document.getElementById('final-bracket-matches').innerHTML = '';
+    // --- INÍCIO DA MUDANÇA ---
+    if (confirm("Are you sure you want to reset the entire tournament? This action cannot be undone.")) {
+        currentTournamentData = {};
+        document.getElementById('app-container').style.display = 'none';
+        document.getElementById('setup').style.display = 'block';
+        document.getElementById('player-list').value = '';
+        
+        document.getElementById('winners-bracket-matches').innerHTML = '';
+        document.getElementById('losers-bracket-matches').innerHTML = '';
+        document.getElementById('final-bracket-matches').innerHTML = '';
+    }
+    // --- FIM DA MUDANÇA ---
 }
 
 function fullRender() {
