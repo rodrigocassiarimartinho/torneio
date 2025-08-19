@@ -26,9 +26,11 @@ function createMatchSVG(matchData) {
                     </radialGradient>
                 </defs>
                 <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="url(#championGradient)" stroke="#0A2F78" stroke-width="1"/>
-                <text x="50%" y="22" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">CHAMPION</text>
-                <line x1="100" y1="35" x2="200" y2="35" stroke="#D9A42A" stroke-width="1.5" />
-                <text x="50%" y="50" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
+                
+                <rect x="4" y="4" width="${CONFIG.SVG_WIDTH - 8}" height="${CONFIG.SVG_HEIGHT - 8}" rx="4" fill="transparent" stroke="#D9A42A" stroke-width="1.5"/>
+
+                <text x="50%" y="24" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">CHAMPION</text>
+                <text x="50%" y="46" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
             </svg>
         `;
     }
