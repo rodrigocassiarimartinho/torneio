@@ -196,19 +196,16 @@ textarea {
     box-shadow: 0 8px 30px rgba(0,0,0,0.05);
     width: 100%;
     overflow-x: auto;
-    padding: 20px 0; /* Ajustado para padding vertical */
-
-    /* Novas regras para centralização vertical */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    /* Removemos a lógica flex e usamos padding para criar a margem constante */
+    padding: 2rem;
 }
 /* --- FIM DA CORREÇÃO --- */
+
 
 .bracket-wrapper {
     position: relative;
     width: fit-content;
-    margin: 0 auto; /* Centraliza horizontalmente */
+    margin: 0 auto;
     padding: 20px;
     padding-top: 0;
 }
