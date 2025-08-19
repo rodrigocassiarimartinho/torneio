@@ -1,14 +1,9 @@
-// js/results.js - Versão com a correção final no _findMatchInTournament
+// js/results.js - Versão com depuração avançada dentro do _stabilizeBracket
 
-// --- ESTADO INTERNO DO MÓDULO ---
 let currentTournamentData = {};
 let undoHistory = [];
 let redoHistory = [];
 
-// --- FUNÇÕES "PRIVADAS" DO MÓDULO ---
-
-// **INÍCIO DA CORREÇÃO**
-// Esta é a versão correta e robusta da função
 function _findMatchInTournament(matchId, tournamentData) {
     if (tournamentData.type === 'single') {
         for (const round of (tournamentData.rounds || [])) {
@@ -37,7 +32,6 @@ function _findMatchInTournament(matchId, tournamentData) {
     }
     return { match: null, bracketName: null };
 }
-// **FIM DA CORREÇÃO**
 
 function _determineWinner(match) {
     let winner = null, loser = null;
@@ -77,6 +71,7 @@ function _advancePlayer(player, placeholder, data) {
 function _processMatchResult(data, match, bracketName) {
     const { winner, loser } = _determineWinner(match);
     if (winner) {
+        console.log(`  [+] Processando resultado da M${match.id}. Vencedor: ${winner.name}`);
         if (bracketName === 'grandFinal' && match.id === data.grandFinal[0][0].id) { 
             const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
             if (winnerIsFromWinnersBracket) {
@@ -101,7 +96,11 @@ function _processMatchResult(data, match, bracketName) {
 function _stabilizeBracket(data) {
     let dataCopy = JSON.parse(JSON.stringify(data));
     let changesMade;
+    let passCount = 0; // DEBUG
+
     do {
+        passCount++;
+        console.log(`--- Iniciando passagem de estabilização #${passCount} ---`);
         changesMade = false;
         const allBracketsInfo = [
             { name: 'winnersBracket', data: dataCopy.winnersBracket },
@@ -110,6 +109,7 @@ function _stabilizeBracket(data) {
             { name: 'rounds', data: dataCopy.rounds }
         ];
 
+        console.log("  [1] Verificando WOs automáticos...");
         for (const bracketInfo of allBracketsInfo) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
@@ -118,22 +118,42 @@ function _stabilizeBracket(data) {
                     const p2_isBye = match.p2 && match.p2.isBye;
                     const p1_exists = match.p1 && !match.p1.isBye && !match.p1.isPlaceholder;
                     const p2_exists = match.p2 && !match.p2.isBye && !match.p2.isPlaceholder;
-                    if (p1_exists && p2_isBye) { match.p2.score = 'WO'; changesMade = true; } 
-                    else if (p2_exists && p1_isBye) { match.p1.score = 'WO'; changesMade = true; }
+                    if (p1_exists && p2_isBye) { 
+                        match.p2.score = 'WO'; 
+                        changesMade = true;
+                        console.log(`    - WO automático atribuído na M${match.id}`);
+                    } 
+                    else if (p2_exists && p1_isBye) { 
+                        match.p1.score = 'WO'; 
+                        changesMade = true;
+                        console.log(`    - WO automático atribuído na M${match.id}`);
+                    }
                 }
             }
         }
 
+        console.log("  [2] Verificando resultados para processar...");
         for (const bracketInfo of allBracketsInfo) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
                     if (!match || match.isProcessed) continue;
                     const hasScore = (match.p1 && match.p1.score !== undefined) || (match.p2 && match.p2.score !== undefined);
-                    if (hasScore) { if (_processMatchResult(dataCopy, match, bracketInfo.name)) { changesMade = true; } }
+                    if (hasScore) { 
+                        if (_processMatchResult(dataCopy, match, bracketInfo.name)) { 
+                            changesMade = true; 
+                        } 
+                    }
                 }
             }
         }
+        if (passCount > 10) { // Safety break para evitar travar o navegador
+            console.error("LOOP INFINITO DETECTADO! Interrompendo a estabilização.");
+            break;
+        }
+
     } while (changesMade);
+    
+    console.log(`--- Estabilização concluída após ${passCount} passagem(ns). ---`);
     return dataCopy;
 }
 
@@ -143,6 +163,7 @@ export function initializeBracket(populatedBracket) {
     undoHistory = [];
     redoHistory = [];
     currentTournamentData = _stabilizeBracket(populatedBracket);
+    console.log("Objeto da chave DEPOIS de sair do motor:", JSON.parse(JSON.stringify(currentTournamentData)));
 }
 
 export function updateScore(matchId, playerSlot, newScore) {
