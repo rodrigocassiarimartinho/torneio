@@ -65,16 +65,18 @@ textarea {
 
 .app-header h1 {
     margin: 0;
-    text-align: right;
+    text-align: center; /* Centraliza o título */
     flex-grow: 1;
 }
 
-.header-buttons {
+.header-buttons-left, .header-buttons-right {
     display: flex;
     gap: 10px;
+    flex-shrink: 0; /* Impede que os botões encolham */
 }
 
-#reset-btn, #undo-btn, #redo-btn {
+/* Estilos para os botões de ÍCONE */
+#undo-btn, #redo-btn {
     width: 40px;
     height: 40px;
     background-color: transparent;
@@ -84,20 +86,19 @@ textarea {
     position: relative;
     transition: all 0.2s ease;
     padding: 0;
-    flex-shrink: 0;
     background-repeat: no-repeat;
     background-position: center;
 }
 
-#reset-btn:hover, #undo-btn:hover, #redo-btn:hover {
+#undo-btn:hover, #redo-btn:hover {
     background-color: #041A4A;
 }
 
-#reset-btn:hover::after, #undo-btn:hover::after, #redo-btn:hover::after {
+#undo-btn:hover::after, #redo-btn:hover::after {
     filter: invert(1);
 }
 
-#reset-btn::after, #undo-btn::after, #redo-btn::after {
+#undo-btn::after, #redo-btn::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -107,6 +108,15 @@ textarea {
     height: 20px;
     background-color: #041A4A;
     transition: filter 0.2s ease;
+}
+
+#undo-btn:disabled, #redo-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    background-color: transparent !important;
+}
+#undo-btn:disabled::after, #redo-btn:disabled::after {
+    filter: none !important;
 }
 
 #undo-btn::after {
@@ -119,18 +129,22 @@ textarea {
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M11.5 8C14.15 8 16.55 8.99 18.4 10.6L22 7V16H13L16.62 12.38C15.23 11.22 13.46 10.5 11.5 10.5C8.76 10.5 6.46 11.94 5.36 14.04L3.64 13.26C5.09 10.44 8.04 8.5 11.5 8Z'/%3E%3C/svg%3E") no-repeat center;
 }
 
-#reset-btn::after {
-     -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C16.42 20 20 16.42 20 12C20 7.58 16.42 4 12 4ZM12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C15.31 6 18 8.69 18 12C18 15.31 15.31 18 12 18ZM13.25 9.03L8.5 12.5L7.5 11.47L11.53 8.28L12.47 7.5L16.5 10.53L15.5 11.5L13.25 9.03Z'/%3E%3C/svg%3E") no-repeat center;
-    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M12 4C7.58 4 4 7.58 4 12C4 16.42 7.58 20 12 20C16.42 20 20 16.42 20 12C20 7.58 16.42 4 12 4ZM12 18C8.69 18 6 15.31 6 12C6 8.69 8.69 6 12 6C15.31 6 18 8.69 18 12C18 15.31 15.31 18 12 18ZM13.25 9.03L8.5 12.5L7.5 11.47L11.53 8.28L12.47 7.5L16.5 10.53L15.5 11.5L13.25 9.03Z'/%3E%3C/svg%3E") no-repeat center;
+/* Estilo específico para o botão de TEXTO */
+#reset-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #041A4A;
+    background-color: transparent;
+    border: 2px solid #041A4A;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-#undo-btn:disabled, #redo-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-    background-color: transparent !important;
-}
-#undo-btn:disabled::after, #redo-btn:disabled::after {
-    filter: none !important;
+#reset-btn:hover {
+    background-color: #041A4A;
+    color: #FFFFFF;
 }
 
 .tournament-type-selector { margin-bottom: 1.5rem; }
@@ -169,7 +183,6 @@ textarea {
     padding-top: 0;
 }
 
-/* REGRA CRÍTICA PARA O LAYOUT HORIZONTAL DAS RODADAS */
 .bracket-matches { 
     display: flex; 
     position: relative; 
@@ -203,7 +216,6 @@ textarea {
 .svg-text-id { font-weight: 700; }
 .svg-text-placeholder { font-style: italic; fill: #99aab5; }
 
-/* REGRA CRÍTICA PARA O ESTILO DOS PLACARES */
 .score-select { 
     width: 100%; 
     height: 100%; 
