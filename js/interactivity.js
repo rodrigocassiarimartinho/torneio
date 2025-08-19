@@ -1,17 +1,15 @@
-// js/interactivity.js - Versão "Mensageiro"
+// js/interactivity.js - Versão que salva o estado para o Undo
 
-import { updateScoreAndStabilize } from './results.js'; // <<-- MUDANÇA AQUI
+import { updateScoreAndStabilize } from './results.js';
 
-export function setupInteractivity(getTournamentData, setTournamentData, fullRender) {
+// A função agora recebe 'undoHistory' como um novo parâmetro
+export function setupInteractivity(getTournamentData, setTournamentData, fullRender, undoHistory) {
     const appContainer = document.getElementById('app-container');
 
-    // Remove o listener antigo para evitar duplicatas em caso de re-chamada
     if (window.scoreUpdateHandler) {
         appContainer.removeEventListener('change', window.scoreUpdateHandler);
     }
 
-    // **INÍCIO DA MUDANÇA**
-    // O handler agora é apenas um mensageiro
     window.scoreUpdateHandler = (event) => {
         if (!event.target.classList.contains('score-select')) return;
 
@@ -20,19 +18,20 @@ export function setupInteractivity(getTournamentData, setTournamentData, fullRen
         const playerSlot = selectEl.dataset.playerSlot;
         const newScore = selectEl.value;
 
-        // 1. Pega os dados atuais
         const currentData = getTournamentData();
         
-        // 2. Envia a ação do usuário para o motor e recebe o novo estado estável
-        const newData = updateScoreAndStabilize(currentData, matchId, playerSlot, newScore);
-
-        // 3. Atualiza o estado global com os novos dados
-        setTournamentData(newData);
+        // --- INÍCIO DA MUDANÇA ---
+        // 1. Salva uma cópia do estado ATUAL no histórico ANTES de qualquer mudança
+        undoHistory.push(JSON.parse(JSON.stringify(currentData)));
         
-        // 4. Renderiza a chave inteira com o estado final
+        // 2. Habilita o botão de Undo
+        document.getElementById('undo-btn').disabled = false;
+        // --- FIM DA MUDANÇA ---
+
+        const newData = updateScoreAndStabilize(currentData, matchId, playerSlot, newScore);
+        setTournamentData(newData);
         fullRender();
     };
-    // **FIM DA MUDANÇA**
 
     appContainer.addEventListener('change', window.scoreUpdateHandler);
 }
