@@ -27,6 +27,14 @@ h2 {
     text-align: center;
 }
 
+/* --- INÍCIO DA MUDANÇA --- */
+.instructions {
+    margin: 2rem 0 0.75rem 0;
+    line-height: 1.4;
+    color: #333;
+}
+/* --- FIM DA MUDANÇA --- */
+
 textarea {
     width: 95%;
     height: 200px;
@@ -39,7 +47,7 @@ textarea {
 }
 
 #setup button {
-    margin-top: 1rem;
+    margin-top: 1.5rem; /* Aumentado */
     padding: 12px 25px;
     font-size: 1.1rem;
     font-weight: bold;
@@ -65,17 +73,16 @@ textarea {
 
 .app-header h1 {
     margin: 0;
-    text-align: center; /* Centraliza o título */
+    text-align: center;
     flex-grow: 1;
 }
 
 .header-buttons-left, .header-buttons-right {
     display: flex;
     gap: 10px;
-    flex-shrink: 0; /* Impede que os botões encolham */
+    flex-shrink: 0;
 }
 
-/* Estilos para os botões de ÍCONE */
 #undo-btn, #redo-btn {
     width: 40px;
     height: 40px;
@@ -129,7 +136,6 @@ textarea {
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M11.5 8C14.15 8 16.55 8.99 18.4 10.6L22 7V16H13L16.62 12.38C15.23 11.22 13.46 10.5 11.5 10.5C8.76 10.5 6.46 11.94 5.36 14.04L3.64 13.26C5.09 10.44 8.04 8.5 11.5 8Z'/%3E%3C/svg%3E") no-repeat center;
 }
 
-/* Estilo específico para o botão de TEXTO */
 #reset-btn {
     padding: 8px 16px;
     font-size: 0.9rem;
@@ -147,12 +153,31 @@ textarea {
     color: #FFFFFF;
 }
 
-.tournament-type-selector { margin-bottom: 1.5rem; }
-.tournament-type-selector p { margin: 0 0 0.75rem 0; font-weight: 500; color: #333; }
-.tournament-type-selector div { display: inline-block; margin: 0 10px; }
-.tournament-type-selector label { padding: 8px 15px; border: 1px solid #ccc; border-radius: 20px; cursor: pointer; transition: all 0.2s ease; }
+.tournament-type-selector { 
+    margin: 1.5rem 0; /* Aumentado */
+}
+.tournament-type-selector p { 
+    margin: 0 0 1rem 0; /* Aumentado */
+    font-weight: 500; 
+    color: #333; 
+}
+.tournament-type-selector div { 
+    display: inline-block; 
+    margin: 0 10px; 
+}
+.tournament-type-selector label { 
+    padding: 8px 15px; 
+    border: 1px solid #ccc; 
+    border-radius: 20px; 
+    cursor: pointer; 
+    transition: all 0.2s ease; 
+}
 .tournament-type-selector input[type="radio"] { display: none; }
-.tournament-type-selector input[type="radio"]:checked + label { background-color: #041A4A; color: #fff; border-color: #041A4A; }
+.tournament-type-selector input[type="radio"]:checked + label { 
+    background-color: #041A4A; 
+    color: #fff; 
+    border-color: #041A4A; 
+}
 
 .main-content {
     display: flex;
@@ -206,6 +231,7 @@ textarea {
     pointer-events: none; 
     z-index: 1; 
 }
+
 .bracket-matches { 
     z-index: 2; 
     position: relative; 
