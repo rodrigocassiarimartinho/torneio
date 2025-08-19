@@ -15,6 +15,7 @@ h1, h2 {
 h2 {
     margin-top: 0;
     margin-bottom: 1.5rem;
+    padding-top: 20px; /* Espaçamento para o título */
 }
 
 #setup {
@@ -189,15 +190,17 @@ textarea {
     width: 100%;
 }
 
-/* --- INÍCIO DA CORREÇÃO --- */
 #winners-bracket-container, #losers-bracket-container, #grand-final-container {
     background-color: #fff;
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.05);
     width: 100%;
-    overflow-x: auto;
-    /* Removemos a lógica flex e usamos padding para criar a margem constante */
-    padding: 2rem;
+}
+
+/* --- INÍCIO DA CORREÇÃO --- */
+.bracket-area {
+    padding: 1.5rem; /* A margem constante que você queria */
+    overflow-x: auto; /* Garante que o scroll aconteça aqui */
 }
 /* --- FIM DA CORREÇÃO --- */
 
