@@ -1,4 +1,4 @@
-// js/main.js - Versão com a correção final da visibilidade dos contêineres
+// js/main.js - Versão com correção final do título da chave
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -30,21 +30,22 @@ function startTournament() {
     document.getElementById('setup').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
     
-    // --- INÍCIO DA CORREÇÃO ---
-    // Estas linhas cruciais foram restauradas
     document.getElementById('winners-bracket-container').style.display = 'block';
     document.getElementById('losers-bracket-container').style.display = tournamentType === 'double' ? 'block' : 'none';
     document.getElementById('grand-final-container').style.display = tournamentType === 'double' ? 'block' : 'none';
-    // --- FIM DA CORREÇÃO ---
     
     const mainBracketTitle = document.getElementById('main-bracket-title');
-    mainBracketTitle.style.display = 'block';
     
+    // --- INÍCIO DA CORREÇÃO ---
+    // Apenas mostra o título para o modo de dupla eliminação
     if (tournamentType === 'double') {
+        mainBracketTitle.style.display = 'block';
         mainBracketTitle.textContent = 'Winners Bracket';
     } else {
-        mainBracketTitle.textContent = 'Main Bracket';
+        mainBracketTitle.style.display = 'none';
+        mainBracketTitle.textContent = ''; // Limpa o texto
     }
+    // --- FIM DA CORREÇÃO ---
     
     let populatedBracket;
     if (tournamentType === 'single') {
