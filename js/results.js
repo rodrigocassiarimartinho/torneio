@@ -1,11 +1,8 @@
-// js/results.js - Versão final com Motor de Torneio Stateful
+// js/results.js - Versão com log de depuração para o problema de renderização
 
-// --- ESTADO INTERNO DO MÓDULO ---
 let currentTournamentData = {};
 let undoHistory = [];
 let redoHistory = [];
-
-// --- FUNÇÕES "PRIVADAS" DO MÓDULO ---
 
 function _findMatchInTournament(matchId, tournamentData) {
     if (tournamentData.type === 'single') {
@@ -35,7 +32,6 @@ function _findMatchInTournament(matchId, tournamentData) {
     }
     return { match: null, bracketName: null };
 }
-
 
 function _determineWinner(match) {
     let winner = null, loser = null;
@@ -135,23 +131,23 @@ function _stabilizeBracket(data) {
     return dataCopy;
 }
 
-// --- FUNÇÕES "PÚBLICAS" EXPORTADAS ---
-
 export function initializeBracket(populatedBracket) {
     undoHistory = [];
     redoHistory = [];
     currentTournamentData = _stabilizeBracket(populatedBracket);
+    // --- INÍCIO DA MUDANÇA (DEBUG) ---
+    console.log("Objeto da chave DEPOIS de sair do motor:", JSON.parse(JSON.stringify(currentTournamentData)));
+    // --- FIM DA MUDANÇA (DEBUG) ---
 }
 
 export function updateScore(matchId, playerSlot, newScore) {
     const { match } = _findMatchInTournament(matchId, currentTournamentData);
     if (!match) return;
     
-    // Salva no histórico apenas na primeira interação com uma partida não pontuada
     const isFirstScoreInteraction = !(match.p1 && match.p1.score !== undefined) && !(match.p2 && match.p2.score !== undefined);
     if (isFirstScoreInteraction) {
         undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
-        redoHistory = []; // Limpa o "refazer" pois uma nova linha do tempo foi criada
+        redoHistory = [];
     }
 
     if (!match[playerSlot]) match[playerSlot] = {};
