@@ -1,4 +1,4 @@
-// js/main.js - Versão com confirmação de Reset
+// js/main.js - Versão com lógica de Undo
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -10,6 +10,9 @@ import { setupInteractivity } from './interactivity.js';
 import { stabilizeBracket } from './results.js';
 
 let currentTournamentData = {};
+// --- INÍCIO DA MUDANÇA ---
+let undoHistory = [];
+// --- FIM DA MUDANÇA ---
 
 const getTournamentData = () => currentTournamentData;
 const setTournamentData = (newData) => {
@@ -17,6 +20,10 @@ const setTournamentData = (newData) => {
 };
 
 function startTournament() {
+    // Limpa o histórico ao iniciar um novo torneio
+    undoHistory = [];
+    document.getElementById('undo-btn').disabled = true;
+
     const playerInput = document.getElementById('player-list').value;
     const tournamentType = document.querySelector('input[name="bracket-type"]:checked').value;
     
@@ -30,10 +37,7 @@ function startTournament() {
 
     document.getElementById('setup').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
-    document.getElementById('winners-bracket-container').style.display = 'block';
-    document.getElementById('losers-bracket-container').style.display = tournamentType === 'double' ? 'block' : 'none';
-    document.getElementById('grand-final-container').style.display = tournamentType === 'double' ? 'block' : 'none';
-    
+    // ... (resto da função inalterado)
     const mainBracketTitle = document.getElementById('main-bracket-title');
     mainBracketTitle.style.display = 'block';
     
@@ -59,9 +63,12 @@ function startTournament() {
 }
 
 function resetTournament() {
-    // --- INÍCIO DA MUDANÇA ---
     if (confirm("Are you sure you want to reset the entire tournament? This action cannot be undone.")) {
         currentTournamentData = {};
+        // Limpa o histórico ao resetar
+        undoHistory = [];
+        document.getElementById('undo-btn').disabled = true;
+
         document.getElementById('app-container').style.display = 'none';
         document.getElementById('setup').style.display = 'block';
         document.getElementById('player-list').value = '';
@@ -70,7 +77,6 @@ function resetTournament() {
         document.getElementById('losers-bracket-matches').innerHTML = '';
         document.getElementById('final-bracket-matches').innerHTML = '';
     }
-    // --- FIM DA MUDANÇA ---
 }
 
 function fullRender() {
@@ -85,10 +91,24 @@ function fullRender() {
     }
 }
 
+// --- INÍCIO DA MUDANÇA ---
+function undoLastAction() {
+    if (undoHistory.length > 0) {
+        const previousState = undoHistory.pop();
+        setTournamentData(previousState);
+        fullRender();
+    }
+    // Desabilita o botão se o histórico estiver vazio
+    document.getElementById('undo-btn').disabled = undoHistory.length === 0;
+}
+// --- FIM DA MUDANÇA ---
+
 document.getElementById('generate-btn').addEventListener('click', startTournament);
 document.getElementById('reset-btn').addEventListener('click', resetTournament);
+document.getElementById('undo-btn').addEventListener('click', undoLastAction); // Novo event listener
 
-setupInteractivity(getTournamentData, setTournamentData, fullRender);
+// Passa o array de histórico para a interatividade para que ele possa ser modificado
+setupInteractivity(getTournamentData, setTournamentData, fullRender, undoHistory);
 
 window.addEventListener('resize', () => {
     if (!currentTournamentData.type) return;
