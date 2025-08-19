@@ -25,6 +25,7 @@
         
         <p class="instructions">Enter players one per line. To assign priority seeds, start the line with a number (e.g., "1. Player Name"). Top seeds will receive available byes automatically.</p>
         <textarea id="player-list" placeholder="1. Isaac Newton&#10;2. Marie Curie&#10;Albert Einstein&#10;Leonardo da Vinci&#10;..."></textarea>
+
         <button id="generate-btn">Generate Bracket</button>
     </div>
 
@@ -44,25 +45,31 @@
             <div class="brackets-column">
                 <div id="winners-bracket-container">
                     <h2 id="main-bracket-title"></h2>
-                    <div class="bracket-wrapper">
-                        <svg class="connector-svg" id="winners-connector-svg"></svg>
-                        <div class="bracket-matches" id="winners-bracket-matches"></div>
+                    <div class="bracket-area">
+                        <div class="bracket-wrapper">
+                            <svg class="connector-svg" id="winners-connector-svg"></svg>
+                            <div class="bracket-matches" id="winners-bracket-matches"></div>
+                        </div>
                     </div>
-                </div>
+                    </div>
                 <div id="losers-bracket-container" style="display: none;">
                     <h2>Losers Bracket</h2>
-                     <div class="bracket-wrapper">
-                        <svg class="connector-svg" id="losers-connector-svg"></svg>
-                        <div class="bracket-matches" id="losers-bracket-matches"></div>
+                    <div class="bracket-area">
+                         <div class="bracket-wrapper">
+                            <svg class="connector-svg" id="losers-connector-svg"></svg>
+                            <div class="bracket-matches" id="losers-bracket-matches"></div>
+                        </div>
                     </div>
-                </div>
+                    </div>
                 <div id="grand-final-container" style="display: none;">
                     <h2>Grand Final</h2>
-                     <div class="bracket-wrapper">
-                        <svg class="connector-svg" id="final-connector-svg"></svg>
-                        <div class="bracket-matches" id="final-bracket-matches"></div>
+                    <div class="bracket-area">
+                         <div class="bracket-wrapper">
+                            <svg class="connector-svg" id="final-connector-svg"></svg>
+                            <div class="bracket-matches" id="final-bracket-matches"></div>
+                        </div>
                     </div>
-                </div>
+                    </div>
             </div>
         </main>
     </div>
