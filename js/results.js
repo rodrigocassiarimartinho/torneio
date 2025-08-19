@@ -1,4 +1,4 @@
-// js/results.js - Versão com Motor de Torneio Stateful (gerencia o próprio estado)
+// js/results.js - Versão final com Motor de Torneio Stateful
 
 // --- ESTADO INTERNO DO MÓDULO ---
 let currentTournamentData = {};
@@ -8,26 +8,36 @@ let redoHistory = [];
 // --- FUNÇÕES "PRIVADAS" DO MÓDULO ---
 
 function _findMatchInTournament(matchId, tournamentData) {
-    // ... (código inalterado, apenas adaptado para ser interno)
-    const allBrackets = tournamentData.type === 'single'
-        ? [tournamentData.rounds]
-        : [tournamentData.winnersBracket, tournamentData.losersBracket, tournamentData.grandFinal];
-    
-    for (const bracket of allBrackets) {
-        if (bracket) {
-            for (const round of bracket) {
-                if (round) {
-                    const match = round.find(m => m && m.id === matchId);
-                    if (match) return { match, bracketName: allBrackets.indexOf(bracket) === 0 ? 'winnersBracket' : 'losersBracket' };
-                }
+    if (tournamentData.type === 'single') {
+        for (const round of (tournamentData.rounds || [])) {
+            const match = round.find(m => m && m.id === matchId);
+            if (match) return { match, bracketName: 'rounds' };
+        }
+    } else {
+        if (tournamentData.winnersBracket) {
+            for (const round of tournamentData.winnersBracket) {
+                const match = round.find(m => m && m.id === matchId);
+                if (match) return { match, bracketName: 'winnersBracket' };
+            }
+        }
+        if (tournamentData.losersBracket) {
+            for (const round of tournamentData.losersBracket) {
+                const match = round.find(m => m && m.id === matchId);
+                if (match) return { match, bracketName: 'losersBracket' };
+            }
+        }
+        if (tournamentData.grandFinal) {
+            for (const round of tournamentData.grandFinal) {
+                const match = round.find(m => m && m.id === matchId);
+                if (match) return { match, bracketName: 'grandFinal' };
             }
         }
     }
-    return { match: null };
+    return { match: null, bracketName: null };
 }
 
+
 function _determineWinner(match) {
-    // ... (código inalterado)
     let winner = null, loser = null;
     const p1 = match.p1, p2 = match.p2;
     if (p2?.score === 'WO') { winner = p1; loser = p2; }
@@ -43,7 +53,6 @@ function _determineWinner(match) {
 }
 
 function _advancePlayer(player, placeholder, data) {
-    // ... (código inalterado)
     const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket, data.grandFinal];
     const playerData = { ...player };
     delete playerData.score;
@@ -64,7 +73,6 @@ function _advancePlayer(player, placeholder, data) {
 }
 
 function _processMatchResult(data, match, bracketName) {
-    // ... (código inalterado)
     const { winner, loser } = _determineWinner(match);
     if (winner) {
         if (bracketName === 'grandFinal' && match.id === data.grandFinal[0][0].id) { 
@@ -127,8 +135,7 @@ function _stabilizeBracket(data) {
     return dataCopy;
 }
 
-
-// --- FUNÇÕES "PÚBLICAS" EXPORTADAS (A NOVA INTERFACE DO MÓDULO) ---
+// --- FUNÇÕES "PÚBLICAS" EXPORTADAS ---
 
 export function initializeBracket(populatedBracket) {
     undoHistory = [];
@@ -137,12 +144,15 @@ export function initializeBracket(populatedBracket) {
 }
 
 export function updateScore(matchId, playerSlot, newScore) {
-    // Salva estado atual para o Undo e limpa o Redo
-    undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
-    redoHistory = [];
-
     const { match } = _findMatchInTournament(matchId, currentTournamentData);
     if (!match) return;
+    
+    // Salva no histórico apenas na primeira interação com uma partida não pontuada
+    const isFirstScoreInteraction = !(match.p1 && match.p1.score !== undefined) && !(match.p2 && match.p2.score !== undefined);
+    if (isFirstScoreInteraction) {
+        undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
+        redoHistory = []; // Limpa o "refazer" pois uma nova linha do tempo foi criada
+    }
 
     if (!match[playerSlot]) match[playerSlot] = {};
     match[playerSlot].score = newScore;
@@ -166,7 +176,6 @@ export function redo() {
 }
 
 export function getCurrentData() {
-    // Retorna uma cópia para evitar modificações externas acidentais
     return JSON.parse(JSON.stringify(currentTournamentData));
 }
 
