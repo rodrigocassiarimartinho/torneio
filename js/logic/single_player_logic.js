@@ -1,4 +1,7 @@
 // js/logic/single_player_logic.js
+// Contém o algoritmo para popular a primeira rodada de uma chave de eliminação simples,
+// distribuindo jogadores e byes de acordo com as regras de seeding.
+
 import { getNextPowerOfTwo } from '../math.js';
 import { generateSeedOrder, shuffleArray } from '../utils.js';
 import { parsePlayerInput } from '../parsing.js';
@@ -9,15 +12,13 @@ export function populateSingleBracket(structure, playerList) {
     const bracketSize = getNextPowerOfTwo(allPlayers.length);
     const byesCount = bracketSize - allPlayers.length;
 
-    // Passo 1: Criação das Listas
     const seeds = [...seededPlayers];
     let others = [...unseededPlayers];
     const byes = Array.from({ length: byesCount }, (_, i) => ({ name: `BYE_${i + 1}`, isBye: true }));
     
-    // Passo 2: Criação da Grade Vazia
     let playerSlots = new Array(bracketSize).fill(null);
 
-    // Passo 3: Posicionamento dos Cabeças de Chave
+    // Posiciona os cabeças de chave em locais pré-determinados
     const numSeeds = seeds.length > 0 ? getNextPowerOfTwo(seeds.length) : 0;
     if (numSeeds > 0) {
         const seedOrder = generateSeedOrder(numSeeds);
@@ -32,7 +33,7 @@ export function populateSingleBracket(structure, playerList) {
         });
     }
 
-    // Passo 4: Distribuição Prioritária de Byes
+    // Distribui byes prioritariamente para os cabeças de chave
     let byesToDistribute = [...byes];
     seeds.sort((a, b) => a.seed - b.seed).forEach(seed => {
         if (byesToDistribute.length > 0) {
@@ -46,7 +47,7 @@ export function populateSingleBracket(structure, playerList) {
         }
     });
 
-    // Passo 5: Distribuição de "Jogadores Âncora"
+    // Distribui alguns jogadores aleatórios para evitar confrontos bye vs bye
     shuffleArray(others);
     for (let i = 0; i < bracketSize; i += 2) {
         if (playerSlots[i] === null && playerSlots[i+1] === null && others.length > 0) {
@@ -54,7 +55,7 @@ export function populateSingleBracket(structure, playerList) {
         }
     }
 
-    // Passo 6 & 7: Sorteio e Preenchimento Final
+    // Preenche as vagas restantes com os jogadores e byes que sobraram
     const finalDistributionPool = [...others, ...byesToDistribute];
     shuffleArray(finalDistributionPool);
     for (let i = 0; i < bracketSize; i++) {
@@ -63,6 +64,7 @@ export function populateSingleBracket(structure, playerList) {
         }
     }
     
+    // Insere a lista final de jogadores na primeira rodada da estrutura
     structure.rounds[0].forEach((match, index) => {
         match.p1 = playerSlots[index * 2];
         match.p2 = playerSlots[index * 2 + 1];
