@@ -19,16 +19,14 @@ function createMatchSVG(matchData) {
 
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <radialGradient id="championGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
-                        <stop offset="0%" style="stop-color:#0A2F78;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#041A4A;stop-opacity:1" />
-                    </radialGradient>
-                </defs>
-                <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="url(#championGradient)" stroke="#0A2F78" stroke-width="1"/>
-                
-                <rect x="4" y="4" width="${CONFIG.SVG_WIDTH - 8}" height="${CONFIG.SVG_HEIGHT - 8}" rx="4" fill="transparent" stroke="#D9A42A" stroke-width="1.5"/>
-
+                <rect 
+                    x="1" y="1" 
+                    width="${CONFIG.SVG_WIDTH - 2}" height="${CONFIG.SVG_HEIGHT - 2}" 
+                    rx="6" 
+                    fill="#041A4A" 
+                    stroke="#D9A42A" 
+                    stroke-width="2"
+                />
                 <text x="50%" y="24" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">CHAMPION</text>
                 <text x="50%" y="46" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
             </svg>
@@ -126,7 +124,7 @@ function drawConnectors(targetSelector) {
             const startY = matchRect.top + matchRect.height / 2 - wrapperRect.top;
             
             if (r < rounds.length - 1) {
-                const isChampionBox = !!match.querySelector('rect[fill="url(#championGradient)"]');
+                const isChampionBox = !!match.querySelector('rect[stroke="#D9A42A"]');
                 if(!isChampionBox) {
                     const startX = matchRect.right - wrapperRect.left;
                     const endX = startX + horizontalMidpoint;
