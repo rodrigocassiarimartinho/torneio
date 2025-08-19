@@ -27,7 +27,8 @@ function createMatchSVG(matchData) {
                     stroke="#D9A42A" 
                     stroke-width="2"
                 />
-                <text x="50%" y="24" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">CHAMPION</text>
+                {/* CORREÇÃO APLICADA AQUI */}
+                <text x="50%" y="24" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">Champion</text>
                 <text x="50%" y="46" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
             </svg>
         `;
