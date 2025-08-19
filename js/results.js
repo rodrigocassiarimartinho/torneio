@@ -1,4 +1,4 @@
-// js/results.js - Versão com a correção final do confronto Bye vs. Bye
+// js/results.js - Versão com a correção final do avanço do Bye
 
 let currentTournamentData = {};
 let undoHistory = [];
@@ -71,8 +71,11 @@ function _advancePlayer(player, placeholder, data) {
 function _processMatchResult(data, match, bracketName) {
     const { winner, loser } = _determineWinner(match);
     if (winner) {
-        // Apenas jogadores reais são enviados para a chave dos perdedores
-        const shouldAdvanceLoser = data.type === 'double' && bracketName === 'winnersBracket' && loser && !loser.isBye;
+        // --- INÍCIO DA CORREÇÃO ---
+        // A condição para avançar o perdedor não deve filtrar os Byes.
+        // O Bye é um perdedor virtual e precisa avançar para a estrutura funcionar.
+        const shouldAdvanceLoser = data.type === 'double' && bracketName === 'winnersBracket' && loser;
+        // --- FIM DA CORREÇÃO ---
 
         if (bracketName === 'grandFinal' && match.id === data.grandFinal[0][0].id) { 
             const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
@@ -81,7 +84,7 @@ function _processMatchResult(data, match, bracketName) {
                 _advancePlayer(winner, championBox.p1.name, data);
             } else {
                 _advancePlayer(winner, `Winner of M${match.id}`, data);
-                if (loser && !loser.isBye) _advancePlayer(loser, `Loser of M${match.id}`, data);
+                _advancePlayer(loser, `Loser of M${match.id}`, data);
             }
         } else {
             _advancePlayer(winner, `Winner of M${match.id}`, data);
@@ -118,7 +121,6 @@ function _stabilizeBracket(data) {
                     const p1_exists = match.p1 && !match.p1.isBye && !match.p1.isPlaceholder;
                     const p2_exists = match.p2 && !match.p2.isBye && !match.p2.isPlaceholder;
 
-                    // --- INÍCIO DA CORREÇÃO ---
                     if (p1_exists && p2_isBye) { 
                         match.p2.score = 'WO'; 
                         changesMade = true;
@@ -127,12 +129,10 @@ function _stabilizeBracket(data) {
                         match.p1.score = 'WO'; 
                         changesMade = true;
                     }
-                    // Regra para Bye vs Bye: p1 avança para manter a estrutura
                     else if (p1_isBye && p2_isBye) {
-                        match.p2.score = 'WO'; // p2 "perde"
+                        match.p2.score = 'WO';
                         changesMade = true;
                     }
-                    // --- FIM DA CORREÇÃO ---
                 }
             }
         }
