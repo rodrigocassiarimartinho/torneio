@@ -1,4 +1,4 @@
-// js/main.js - Versão Orquestrador de UI
+// js/main.js - Versão Orquestrador de UI Final
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -7,7 +7,7 @@ import { populateDoubleBracket } from './logic/double_player_logic.js';
 import { renderBracket } from './bracket_render.js';
 import { parsePlayerInput } from './parsing.js';
 import { setupInteractivity } from './interactivity.js';
-import * as tournamentEngine from './results.js'; // Importa o motor inteiro
+import * as tournamentEngine from './results.js';
 
 function updateButtonStates() {
     const { canUndo, canRedo } = tournamentEngine.getHistoryState();
@@ -54,15 +54,18 @@ function startTournament() {
 
 function resetTournament() {
     if (confirm("Are you sure you want to reset the entire tournament? This action cannot be undone.")) {
-        // A lógica de reset agora está implícita no startTournament
         document.getElementById('app-container').style.display = 'none';
         document.getElementById('setup').style.display = 'block';
         document.getElementById('player-list').value = '';
         
-        document.getElementById('winners-bracket-matches').innerHTML = '';
-        document.getElementById('losers-bracket-matches').innerHTML = '';
-        document.getElementById('final-bracket-matches').innerHTML = '';
-
+        // Limpa a UI
+        const containers = ['#winners-bracket-matches', '#losers-bracket-matches', '#final-bracket-matches'];
+        containers.forEach(sel => {
+            const el = document.querySelector(sel);
+            if (el) el.innerHTML = '';
+        });
+        
+        tournamentEngine.initializeBracket({}); // Limpa o estado do motor
         updateButtonStates();
     }
 }
@@ -96,7 +99,7 @@ document.getElementById('reset-btn').addEventListener('click', resetTournament);
 document.getElementById('undo-btn').addEventListener('click', undoAction);
 document.getElementById('redo-btn').addEventListener('click', redoAction);
 
-setupInteractivity(fullRender); // Passa apenas a função de renderização
+setupInteractivity(fullRender);
 
 window.addEventListener('resize', () => {
     const currentData = tournamentEngine.getCurrentData();
