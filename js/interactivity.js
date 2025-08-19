@@ -1,4 +1,4 @@
-// js/interactivity.js - Versão Mensageiro Puro
+// js/interactivity.js - Versão Mensageiro Puro Final
 
 import { updateScore } from './results.js';
 
