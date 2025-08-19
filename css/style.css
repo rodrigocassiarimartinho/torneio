@@ -27,13 +27,11 @@ h2 {
     text-align: center;
 }
 
-/* --- INÍCIO DA MUDANÇA --- */
 .instructions {
     margin: 2rem 0 0.75rem 0;
     line-height: 1.4;
     color: #333;
 }
-/* --- FIM DA MUDANÇA --- */
 
 textarea {
     width: 95%;
@@ -47,7 +45,7 @@ textarea {
 }
 
 #setup button {
-    margin-top: 1.5rem; /* Aumentado */
+    margin-top: 1.5rem;
     padding: 12px 25px;
     font-size: 1.1rem;
     font-weight: bold;
@@ -154,10 +152,10 @@ textarea {
 }
 
 .tournament-type-selector { 
-    margin: 1.5rem 0; /* Aumentado */
+    margin: 1.5rem 0;
 }
 .tournament-type-selector p { 
-    margin: 0 0 1rem 0; /* Aumentado */
+    margin: 0 0 1rem 0;
     font-weight: 500; 
     color: #333; 
 }
@@ -191,19 +189,26 @@ textarea {
     width: 100%;
 }
 
+/* --- INÍCIO DA CORREÇÃO --- */
 #winners-bracket-container, #losers-bracket-container, #grand-final-container {
     background-color: #fff;
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.05);
     width: 100%;
     overflow-x: auto;
-    padding-top: 20px;
+    padding: 20px 0; /* Ajustado para padding vertical */
+
+    /* Novas regras para centralização vertical */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
+/* --- FIM DA CORREÇÃO --- */
 
 .bracket-wrapper {
     position: relative;
     width: fit-content;
-    margin: 0; 
+    margin: 0 auto; /* Centraliza horizontalmente */
     padding: 20px;
     padding-top: 0;
 }
