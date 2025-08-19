@@ -1,32 +1,33 @@
-// js/results.js - Versão com o novo motor de estabilização
+// js/results.js - Versão com Motor de Torneio Stateful (gerencia o próprio estado)
 
-// --- Funções Auxiliares (inalteradas) ---
-function findMatchAndRoundIndex(rounds, matchId) {
-    if (!rounds) return { match: null, round: null, roundIndex: -1 };
-    for (let i = 0; i < rounds.length; i++) {
-        const round = rounds[i];
-        if (round) { for (const match of round) { if (match && match.id === matchId) return { match, round, roundIndex: i }; } }
-    }
-    return { match: null, round: null, roundIndex: -1 };
-}
+// --- ESTADO INTERNO DO MÓDULO ---
+let currentTournamentData = {};
+let undoHistory = [];
+let redoHistory = [];
 
-function findMatchInTournament(matchId, tournamentData) {
-    if (!tournamentData.type) return { match: null };
-    if (tournamentData.type === 'single') {
-        const result = findMatchAndRoundIndex(tournamentData.rounds, matchId);
-        return { ...result, bracket: tournamentData.rounds, bracketName: 'rounds' };
-    } else if (tournamentData.type === 'double') {
-        let result = findMatchAndRoundIndex(tournamentData.winnersBracket, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.winnersBracket, bracketName: 'winnersBracket' };
-        result = findMatchAndRoundIndex(tournamentData.losersBracket, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.losersBracket, bracketName: 'losersBracket' };
-        result = findMatchAndRoundIndex(tournamentData.grandFinal, matchId);
-        if (result.match) return { ...result, bracket: tournamentData.grandFinal, bracketName: 'grandFinal' };
+// --- FUNÇÕES "PRIVADAS" DO MÓDULO ---
+
+function _findMatchInTournament(matchId, tournamentData) {
+    // ... (código inalterado, apenas adaptado para ser interno)
+    const allBrackets = tournamentData.type === 'single'
+        ? [tournamentData.rounds]
+        : [tournamentData.winnersBracket, tournamentData.losersBracket, tournamentData.grandFinal];
+    
+    for (const bracket of allBrackets) {
+        if (bracket) {
+            for (const round of bracket) {
+                if (round) {
+                    const match = round.find(m => m && m.id === matchId);
+                    if (match) return { match, bracketName: allBrackets.indexOf(bracket) === 0 ? 'winnersBracket' : 'losersBracket' };
+                }
+            }
+        }
     }
     return { match: null };
 }
 
 function _determineWinner(match) {
+    // ... (código inalterado)
     let winner = null, loser = null;
     const p1 = match.p1, p2 = match.p2;
     if (p2?.score === 'WO') { winner = p1; loser = p2; }
@@ -42,9 +43,10 @@ function _determineWinner(match) {
 }
 
 function _advancePlayer(player, placeholder, data) {
+    // ... (código inalterado)
     const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket, data.grandFinal];
     const playerData = { ...player };
-    delete playerData.score; // Limpa o placar antes de avançar
+    delete playerData.score;
     for (const bracket of (allBrackets || [])) {
         for (const round of (bracket || [])) {
             for (const match of (round || [])) {
@@ -61,13 +63,10 @@ function _advancePlayer(player, placeholder, data) {
     }
 }
 
-// --- Motor de Lógica Principal (NOVA ARQUITETURA) ---
-
-// Função interna que avança um jogador se a partida tiver um vencedor
-function processMatchResult(data, match, bracketName) {
+function _processMatchResult(data, match, bracketName) {
+    // ... (código inalterado)
     const { winner, loser } = _determineWinner(match);
     if (winner) {
-        // Lógica Especial para a Grande Final
         if (bracketName === 'grandFinal' && match.id === data.grandFinal[0][0].id) { 
             const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
             if (winnerIsFromWinnersBracket) {
@@ -77,85 +76,103 @@ function processMatchResult(data, match, bracketName) {
                 _advancePlayer(winner, `Winner of M${match.id}`, data);
                 _advancePlayer(loser, `Loser of M${match.id}`, data);
             }
-        } else { // Lógica normal para as outras partidas
+        } else {
             _advancePlayer(winner, `Winner of M${match.id}`, data);
             if (data.type === 'double' && bracketName === 'winnersBracket' && loser) {
                 _advancePlayer(loser, `Loser of M${match.id}`, data);
             }
         }
-        match.isProcessed = true; // Marca a partida como processada
-        return true; // Indica que uma mudança ocorreu
+        match.isProcessed = true;
+        return true;
     }
-    return false; // Nenhuma mudança
+    return false;
 }
 
-
-export function stabilizeBracket(tournamentData) {
-    let dataCopy = JSON.parse(JSON.stringify(tournamentData));
+function _stabilizeBracket(data) {
+    let dataCopy = JSON.parse(JSON.stringify(data));
     let changesMade;
-
     do {
         changesMade = false;
         const allBracketsInfo = [
             { name: 'winnersBracket', data: dataCopy.winnersBracket },
             { name: 'losersBracket', data: dataCopy.losersBracket },
             { name: 'grandFinal', data: dataCopy.grandFinal },
-            { name: 'rounds', data: dataCopy.rounds } // Para eliminação simples
+            { name: 'rounds', data: dataCopy.rounds }
         ];
 
-        // 1. FASE DE PLACAR (Atribui WOs automáticos)
         for (const bracketInfo of allBracketsInfo) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
                     if (!match || (match.p1 && match.p1.score !== undefined) || (match.p2 && match.p2.score !== undefined)) continue;
-
                     const p1_isBye = match.p1 && match.p1.isBye;
                     const p2_isBye = match.p2 && match.p2.isBye;
                     const p1_exists = match.p1 && !match.p1.isBye && !match.p1.isPlaceholder;
                     const p2_exists = match.p2 && !match.p2.isBye && !match.p2.isPlaceholder;
-
-                    if (p1_exists && p2_isBye) {
-                        match.p2.score = 'WO';
-                        changesMade = true;
-                    } else if (p2_exists && p1_isBye) {
-                        match.p1.score = 'WO';
-                        changesMade = true;
-                    }
+                    if (p1_exists && p2_isBye) { match.p2.score = 'WO'; changesMade = true; } 
+                    else if (p2_exists && p1_isBye) { match.p1.score = 'WO'; changesMade = true; }
                 }
             }
         }
 
-        // 2. FASE DE RESULTADO (Avança jogadores de partidas com placar)
         for (const bracketInfo of allBracketsInfo) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
                     if (!match || match.isProcessed) continue;
                     const hasScore = (match.p1 && match.p1.score !== undefined) || (match.p2 && match.p2.score !== undefined);
-                    if (hasScore) {
-                        if (processMatchResult(dataCopy, match, bracketInfo.name)) {
-                            changesMade = true;
-                        }
-                    }
+                    if (hasScore) { if (_processMatchResult(dataCopy, match, bracketInfo.name)) { changesMade = true; } }
                 }
             }
         }
-
     } while (changesMade);
-
     return dataCopy;
 }
 
-export function updateScoreAndStabilize(tournamentData, matchId, playerSlot, newScore) {
-    let dataCopy = JSON.parse(JSON.stringify(tournamentData));
-    const { match } = findMatchInTournament(matchId, dataCopy);
 
-    if (!match) return dataCopy;
+// --- FUNÇÕES "PÚBLICAS" EXPORTADAS (A NOVA INTERFACE DO MÓDULO) ---
 
-    // 1. Escreve o placar vindo do usuário
+export function initializeBracket(populatedBracket) {
+    undoHistory = [];
+    redoHistory = [];
+    currentTournamentData = _stabilizeBracket(populatedBracket);
+}
+
+export function updateScore(matchId, playerSlot, newScore) {
+    // Salva estado atual para o Undo e limpa o Redo
+    undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
+    redoHistory = [];
+
+    const { match } = _findMatchInTournament(matchId, currentTournamentData);
+    if (!match) return;
+
     if (!match[playerSlot]) match[playerSlot] = {};
     match[playerSlot].score = newScore;
-    match.isProcessed = false; // Desmarca para que o motor possa processá-lo
+    match.isProcessed = false; 
 
-    // 2. Aciona o motor de estabilização
-    return stabilizeBracket(dataCopy);
+    currentTournamentData = _stabilizeBracket(currentTournamentData);
+}
+
+export function undo() {
+    if (undoHistory.length > 0) {
+        redoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
+        currentTournamentData = undoHistory.pop();
+    }
+}
+
+export function redo() {
+    if (redoHistory.length > 0) {
+        undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
+        currentTournamentData = redoHistory.pop();
+    }
+}
+
+export function getCurrentData() {
+    // Retorna uma cópia para evitar modificações externas acidentais
+    return JSON.parse(JSON.stringify(currentTournamentData));
+}
+
+export function getHistoryState() {
+    return {
+        canUndo: undoHistory.length > 0,
+        canRedo: redoHistory.length > 0
+    };
 }
