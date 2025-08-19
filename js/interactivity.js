@@ -1,8 +1,8 @@
-// js/interactivity.js - Versão que salva o estado para o Undo e com log de depuração
+// js/interactivity.js - Versão Mensageiro Puro
 
-import { updateScoreAndStabilize } from './results.js';
+import { updateScore } from './results.js';
 
-export function setupInteractivity(getTournamentData, setTournamentData, fullRender, undoHistory) {
+export function setupInteractivity(fullRender) {
     const appContainer = document.getElementById('app-container');
 
     if (window.scoreUpdateHandler) {
@@ -17,16 +17,10 @@ export function setupInteractivity(getTournamentData, setTournamentData, fullRen
         const playerSlot = selectEl.dataset.playerSlot;
         const newScore = selectEl.value;
 
-        const currentData = getTournamentData();
+        // 1. Informa o motor sobre a mudança
+        updateScore(matchId, playerSlot, newScore);
         
-        const stateToSave = JSON.parse(JSON.stringify(currentData));
-        console.log("Salvando estado no histórico:", stateToSave); // DEBUG
-        undoHistory.push(stateToSave);
-        
-        document.getElementById('undo-btn').disabled = false;
-
-        const newData = updateScoreAndStabilize(currentData, matchId, playerSlot, newScore);
-        setTournamentData(newData);
+        // 2. Pede para a UI ser redesenhada com o novo estado
         fullRender();
     };
 
