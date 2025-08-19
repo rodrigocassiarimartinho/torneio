@@ -1,4 +1,7 @@
 // js/structures/double_bracket_structure.js
+// Responsável por criar o "esqueleto" completo de uma chave de dupla eliminação,
+// incluindo a chave dos vencedores, perdedores e a grande final, com placeholders.
+
 import * as TMath from '../math.js';
 
 export function buildDoubleBracketStructure(n_original) {
@@ -10,21 +13,18 @@ export function buildDoubleBracketStructure(n_original) {
     const losersBracket = [];
     const grandFinal = [];
 
-    // 1. Constrói o esqueleto da Chave dos Vencedores
     const numWinnersRounds = TMath.getWinnersBracketRoundsCount(bracketSize);
     for (let i = 1; i <= numWinnersRounds; i++) {
         const numMatches = TMath.getWinnersRoundMatchCount(i, bracketSize);
         winnersBracket.push(Array.from({ length: numMatches }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
     }
 
-    // 2. Constrói o esqueleto da Chave dos Perdedores
     const numLosersRounds = TMath.getLosersBracketRoundsCount(bracketSize);
     for (let i = 1; i <= numLosersRounds; i++) {
         const numMatches = TMath.getLosersRoundMatchCount(i, bracketSize);
         losersBracket.push(Array.from({ length: numMatches }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
     }
 
-    // 3. Preenche a Chave dos Vencedores com apontadores
     for(let r=0; r < winnersBracket.length - 1; r++) {
         const currentRound = winnersBracket[r];
         const nextRound = winnersBracket[r+1];
@@ -34,7 +34,6 @@ export function buildDoubleBracketStructure(n_original) {
         });
     }
 
-    // 4. Preenche a Chave dos Perdedores com apontadores
     if (losersBracket[0] && winnersBracket[0]) {
         const losersFromV1 = winnersBracket[0].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
         losersBracket[0].forEach((match, index) => {
@@ -69,7 +68,6 @@ export function buildDoubleBracketStructure(n_original) {
         });
     }
 
-    // 5. Constrói a Grande Final (LÓGICA CORRIGIDA)
     if (bracketSize >= 2) {
         const finalRound1 = [];
         const wbFinalWinner = { name: `Winner of M${winnersBracket[numWinnersRounds-1][0].id}`, isPlaceholder: true };
