@@ -1,4 +1,4 @@
-// js/bracket_render.js - Versão final com todas as melhorias visuais
+// js/bracket_render.js - Versão final com a "cereja do bolo" no estilo do campeão
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -12,23 +12,27 @@ const CONFIG = {
 };
 
 function createMatchSVG(matchData) {
-    // Bloco de código específico para a caixa do campeão
     if (matchData.isChampionBox) {
         const winner = matchData.p1 || { name: 'TBD', isPlaceholder: true };
         const winnerName = winner.name.length > 25 ? winner.name.substring(0, 22) + '...' : winner.name;
         const nameClass = winner.isPlaceholder ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
 
-        // CORREÇÕES APLICADAS AQUI:
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-                <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#041A4A" stroke="#041A4A" stroke-width="1"/>
-                <text x="50%" y="22" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="600" fill="#FFFFFF">Champion</text>
-                <text x="50%" y="49" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" fill="#FFFFFF">${winnerName}</text>
+                <defs>
+                    <radialGradient id="championGradient" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+                        <stop offset="0%" style="stop-color:#0A2F78;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#041A4A;stop-opacity:1" />
+                    </radialGradient>
+                </defs>
+                <rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="url(#championGradient)" stroke="#0A2F78" stroke-width="1"/>
+                <text x="50%" y="22" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">CHAMPION</text>
+                <line x1="100" y1="35" x2="200" y2="35" stroke="#D9A42A" stroke-width="1.5" />
+                <text x="50%" y="50" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
             </svg>
         `;
     }
 
-    // Lógica para partidas normais
     const p1_Y = 18, p2_Y = 47;
     let p1 = { name: 'Bye', seed: null, ...matchData.p1 };
     let p2 = { name: 'Bye', seed: null, ...matchData.p2 };
@@ -120,7 +124,7 @@ function drawConnectors(targetSelector) {
             const startY = matchRect.top + matchRect.height / 2 - wrapperRect.top;
             
             if (r < rounds.length - 1) {
-                const isChampionBox = !!match.querySelector('rect[fill="#041A4A"]');
+                const isChampionBox = !!match.querySelector('rect[fill="url(#championGradient)"]');
                 if(!isChampionBox) {
                     const startX = matchRect.right - wrapperRect.left;
                     const endX = startX + horizontalMidpoint;
