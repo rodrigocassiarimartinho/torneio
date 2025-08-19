@@ -1,4 +1,4 @@
-// js/main.js - Versão Orquestrador de UI Final
+// js/main.js - Versão com log de depuração para o problema de renderização
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -48,6 +48,10 @@ function startTournament() {
         populatedBracket = populateDoubleBracket(structure, playerInput);
     }
     
+    // --- INÍCIO DA MUDANÇA (DEBUG) ---
+    console.log("Objeto da chave ANTES de entrar no motor:", JSON.parse(JSON.stringify(populatedBracket)));
+    // --- FIM DA MUDANÇA (DEBUG) ---
+
     tournamentEngine.initializeBracket(populatedBracket);
     fullRender();
 }
@@ -58,14 +62,13 @@ function resetTournament() {
         document.getElementById('setup').style.display = 'block';
         document.getElementById('player-list').value = '';
         
-        // Limpa a UI
         const containers = ['#winners-bracket-matches', '#losers-bracket-matches', '#final-bracket-matches'];
         containers.forEach(sel => {
             const el = document.querySelector(sel);
             if (el) el.innerHTML = '';
         });
         
-        tournamentEngine.initializeBracket({}); // Limpa o estado do motor
+        tournamentEngine.initializeBracket({});
         updateButtonStates();
     }
 }
