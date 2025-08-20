@@ -1,138 +1,133 @@
-// js/main.js - Versão Final Limpa e Comentada
-// Este módulo atua como o "Orquestrador da UI". Ele lida com os eventos dos
-// botões principais, chama o motor de torneio e pede para a UI ser redesenhada.
+// js/main.js - Lógica exclusiva para a página pública (index.html)
 
-import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
-import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
-import { populateSingleBracket } from './logic/single_player_logic.js';
-import { populateDoubleBracket } from './logic/double_player_logic.js';
 import { renderBracket } from './bracket_render.js';
-import { parsePlayerInput } from './parsing.js';
 import { setupInteractivity } from './interactivity.js';
 import * as tournamentEngine from './results.js';
 
-/**
- * Atualiza o estado (habilitado/desabilitado) dos botões Undo/Redo
- * com base na informação vinda do motor.
- */
-function updateButtonStates() {
-    const { canUndo, canRedo } = tournamentEngine.getHistoryState();
-    document.getElementById('undo-btn').disabled = !canUndo;
-    document.getElementById('redo-btn').disabled = !canRedo;
-}
+const API_URL = 'api/api.php';
 
 /**
- * Inicia um novo torneio com base nas seleções do usuário.
+ * Busca a lista de todos os torneios na API e os exibe na página.
  */
-function startTournament() {
-    const playerInput = document.getElementById('player-list').value;
-    const tournamentType = document.querySelector('input[name="bracket-type"]:checked').value;
+async function loadTournamentList() {
+    const listContainer = document.getElementById('tournament-list');
+    listContainer.innerHTML = '<h2>All Tournaments</h2><p>Loading...</p>';
     
-    const { unseededPlayers, seededPlayers } = parsePlayerInput(playerInput);
-    const playerCount = unseededPlayers.length + seededPlayers.length;
+    try {
+        const response = await fetch(`${API_URL}?action=list`);
+        const tournaments = await response.json();
 
-    if (playerCount < 2) {
-        alert("Please enter at least 2 players.");
-        return;
-    }
+        if (tournaments.length === 0) {
+            listContainer.innerHTML = '<h2>All Tournaments</h2><p>No tournaments found.</p>';
+            return;
+        }
 
-    // Gerencia a visibilidade dos painéis
-    document.getElementById('setup').style.display = 'none';
-    document.getElementById('app-container').style.display = 'block';
-    
-    document.getElementById('winners-bracket-container').style.display = 'block';
-    document.getElementById('losers-bracket-container').style.display = tournamentType === 'double' ? 'block' : 'none';
-    document.getElementById('grand-final-container').style.display = tournamentType === 'double' ? 'block' : 'none';
-    
-    const mainBracketTitle = document.getElementById('main-bracket-title');
-    if (tournamentType === 'double') {
-        mainBracketTitle.style.display = 'block';
-        mainBracketTitle.textContent = 'Winners Bracket';
-    } else {
-        mainBracketTitle.style.display = 'none';
-        mainBracketTitle.textContent = '';
-    }
-    
-    // Monta a estrutura de dados inicial
-    let populatedBracket;
-    if (tournamentType === 'single') {
-        const structure = buildSingleBracketStructure(playerCount);
-        populatedBracket = populateSingleBracket(structure, playerInput);
-    } else {
-        const structure = buildDoubleBracketStructure(playerCount);
-        populatedBracket = populateDoubleBracket(structure, playerInput);
-    }
-    
-    // Envia a estrutura para o motor para inicialização e estabilização
-    tournamentEngine.initializeBracket(populatedBracket);
-    fullRender();
-}
-
-/**
- * Reseta a aplicação para o estado inicial.
- */
-function resetTournament() {
-    if (confirm("Are you sure you want to reset the entire tournament? This action cannot be undone.")) {
-        // Gerencia a visibilidade dos painéis
-        document.getElementById('app-container').style.display = 'none';
-        document.getElementById('setup').style.display = 'block';
-        document.getElementById('player-list').value = '';
-        
-        // Limpa a UI
-        const containers = ['#winners-bracket-matches', '#losers-bracket-matches', '#final-bracket-matches'];
-        containers.forEach(sel => {
-            const el = document.querySelector(sel);
-            if (el) el.innerHTML = '';
+        let html = '<h2>All Tournaments</h2><ul>';
+        tournaments.forEach(t => {
+            const date = new Date(t.tournament_date + 'T00:00:00');
+            const formattedDate = date.toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
+            const typeLabel = t.type === 'single' ? 'Single Elimination' : 'Double Elimination';
+            
+            html += `
+                <li>
+                    <a href="?id=${t.public_id}">
+                        <span class="tournament-name">${t.name}</span>
+                        <span class="tournament-details">${typeLabel} - ${formattedDate}</span>
+                    </a>
+                </li>
+            `;
         });
-        
-        // Limpa o estado do motor
-        tournamentEngine.initializeBracket({});
-        updateButtonStates();
+        html += '</ul>';
+        listContainer.innerHTML = html;
+
+    } catch (error) {
+        listContainer.innerHTML = '<h2>All Tournaments</h2><p>Could not load tournaments.</p>';
+        console.error("Error loading tournament list:", error);
     }
 }
 
 /**
- * Função central que redesenha a chave inteira com base no estado atual do motor.
+ * Carrega e exibe uma chave de torneio específica.
+ */
+async function loadAndDisplayBracket(id) {
+    document.getElementById('tournament-list-container').style.display = 'none';
+    document.getElementById('app-container').style.display = 'block';
+
+    try {
+        const response = await fetch(`${API_URL}?id=${id}`);
+        if (!response.ok) throw new Error('Tournament not found.');
+        
+        const tournamentData = await response.json();
+        
+        // Inicializa o motor com os dados carregados
+        tournamentEngine.initializeBracket(tournamentData.bracket_data);
+        
+        // Atualiza o título principal da página
+        document.querySelector('#app-container h1').textContent = tournamentData.name;
+        
+        fullRender();
+
+    } catch(error) {
+        console.error('Error loading tournament:', error);
+        alert(error.message);
+    }
+}
+
+/**
+ * Função central de renderização.
  */
 function fullRender() {
     const currentData = tournamentEngine.getCurrentData();
     if (!currentData.type) return;
 
-    if (currentData.type === 'single') {
-        renderBracket(currentData.rounds, '#winners-bracket-matches');
-    } else if (currentData.type === 'double') {
+    // Lógica de visibilidade dos contêineres e títulos
+    const mainBracketTitle = document.getElementById('main-bracket-title');
+    document.getElementById('losers-bracket-container').style.display = currentData.type === 'double' ? 'block' : 'none';
+    document.getElementById('grand-final-container').style.display = currentData.type === 'double' ? 'block' : 'none';
+
+    if (currentData.type === 'double') {
+        mainBracketTitle.style.display = 'block';
+        mainBracketTitle.textContent = 'Winners Bracket';
         renderBracket(currentData.winnersBracket, '#winners-bracket-matches');
         renderBracket(currentData.losersBracket, '#losers-bracket-matches');
         renderBracket(currentData.grandFinal, '#final-bracket-matches');
+    } else {
+        mainBracketTitle.style.display = 'none';
+        renderBracket(currentData.rounds, '#winners-bracket-matches');
     }
-    updateButtonStates();
+
+    const { canUndo, canRedo } = tournamentEngine.getHistoryState();
+    document.getElementById('undo-btn').disabled = !canUndo;
+    document.getElementById('redo-btn').disabled = !canRedo;
 }
 
-/**
- * Ações de Undo/Redo que chamam o motor e pedem um redesenho.
- */
-function undoAction() {
-    tournamentEngine.undo();
-    fullRender();
-}
+// --- Lógica de Inicialização da Página Pública ---
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const tournamentId = params.get('id');
 
-function redoAction() {
-    tournamentEngine.redo();
-    fullRender();
-}
+    if (tournamentId) {
+        // Se há um ID na URL, carrega a chave específica
+        loadAndDisplayBracket(tournamentId);
+    } else {
+        // Senão, mostra a lista de todos os torneios
+        loadTournamentList();
+    }
+});
 
-// --- Event Listeners Iniciais ---
-document.getElementById('generate-btn').addEventListener('click', startTournament);
-document.getElementById('reset-btn').addEventListener('click', resetTournament);
-document.getElementById('undo-btn').addEventListener('click', undoAction);
-document.getElementById('redo-btn').addEventListener('click', redoAction);
-
-// Inicializa o módulo que ouve as interações na chave
+// Setup dos botões e interatividade para a visualização da chave
 setupInteractivity(fullRender);
-
-// Garante que os conectores sejam redesenhados se a janela mudar de tamanho
-window.addEventListener('resize', () => {
-    const currentData = tournamentEngine.getCurrentData();
-    if (!currentData.type) return;
+document.getElementById('undo-btn').addEventListener('click', () => { 
+    tournamentEngine.undo(); 
     fullRender();
+    // Aqui poderíamos adicionar um save automático para o admin
+});
+document.getElementById('redo-btn').addEventListener('click', () => { 
+    tournamentEngine.redo(); 
+    fullRender(); 
+    // Aqui poderíamos adicionar um save automático para o admin
+});
+document.getElementById('reset-btn').addEventListener('click', () => {
+    // Um reset na página pública simplesmente volta para a lista de torneios
+    window.location.href = 'index.html'; 
 });
