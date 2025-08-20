@@ -1,47 +1,110 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Bracket Generator</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="js/admin.js" type="module" defer></script>
-</head>
-<body>
-    <div id="setup">
-        <h1>Admin Panel</h1>
+// js/admin.js - Lógica completa para a página de administração
 
-        <div class="setup-section">
-            <h2>Manage Existing Tournaments</h2>
-            <div id="admin-tournament-list">
-                <p>Loading...</p>
-            </div>
-        </div>
+import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
+import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
+import { populateSingleBracket } from './logic/single_player_logic.js';
+import { populateDoubleBracket } from './logic/double_player_logic.js';
+import { parsePlayerInput } from './parsing.js';
+import * as tournamentEngine from './results.js';
 
-        <div class="setup-divider">OR</div>
+const API_URL = 'api/api.php';
 
-        <div class="setup-section">
-            <h2>Create New Tournament</h2>
-            <input type="text" id="tournament-name" placeholder="Tournament Name" class="full-width-input">
-            <input type="date" id="tournament-date" class="full-width-input">
-            
-            <div class="tournament-type-selector">
-                <p>Select bracket type:</p>
-                <div>
-                    <input type="radio" id="type-single" name="bracket-type" value="single" checked>
-                    <label for="type-single">Single Elimination</label>
-                </div>
-                <div>
-                    <input type="radio" id="type-double" name="bracket-type" value="double">
-                    <label for="type-double">Double Elimination</label>
-                </div>
-            </div>
-            
-            <p class="instructions">Enter players one per line. To assign priority seeds, start the line with a number (e.g., "1. Player Name"). Top seeds will receive available byes automatically.</p>
-            <textarea id="player-list" placeholder="1. Isaac Newton..."></textarea>
-            
-            <button id="generate-btn">Generate and Save Tournament</button>
-        </div>
-    </div>
-</body>
-</html>
+/**
+ * Busca e exibe a lista de torneios com links de Edição e Visualização.
+ */
+async function loadAdminTournamentList() {
+    const listContainer = document.getElementById('admin-tournament-list');
+    try {
+        const response = await fetch(`${API_URL}?action=list`);
+        const tournaments = await response.json();
+
+        if (tournaments.length === 0) {
+            listContainer.innerHTML = '<p>No tournaments found.</p>';
+            return;
+        }
+
+        let html = '<ul>';
+        tournaments.forEach(t => {
+            html += `
+                <li class="admin-list-item">
+                    <span class="tournament-name">${t.name}</span>
+                    <div class="admin-links">
+                        <a href="index.html?id=${t.public_id}" target="_blank">View</a>
+                        <a href="index.html?id=${t.public_id}&edit=true" class="edit-link">Edit</a>
+                    </div>
+                </li>
+            `;
+        });
+        html += '</ul>';
+        listContainer.innerHTML = html;
+
+    } catch (error) {
+        listContainer.innerHTML = '<p>Could not load tournaments.</p>';
+        console.error("Error loading tournament list for admin:", error);
+    }
+}
+
+/**
+ * Coleta os dados do formulário, cria uma nova chave e a salva via API.
+ */
+async function createNewTournament() {
+    // ... (A função createNewTournament que já tínhamos permanece exatamente a mesma)
+    const name = document.getElementById('tournament-name').value.trim();
+    const date = document.getElementById('tournament-date').value;
+    const playerInput = document.getElementById('player-list').value;
+    const type = document.querySelector('input[name="bracket-type"]:checked').value;
+
+    if (!name || !date || !playerInput) {
+        alert("Please fill all tournament details: Name, Date, and Player List.");
+        return;
+    }
+    
+    const { unseededPlayers, seededPlayers } = parsePlayerInput(playerInput);
+    const playerCount = unseededPlayers.length + seededPlayers.length;
+    if (playerCount < 2) {
+        alert("Please enter at least 2 players.");
+        return;
+    }
+
+    let populatedBracket;
+    if (type === 'single') {
+        const structure = buildSingleBracketStructure(playerCount);
+        populatedBracket = populateSingleBracket(structure, playerInput);
+    } else {
+        const structure = buildDoubleBracketStructure(playerCount);
+        populatedBracket = populateDoubleBracket(structure, playerInput);
+    }
+    
+    tournamentEngine.initializeBracket(populatedBracket);
+    const finalBracketData = tournamentEngine.getCurrentData();
+
+    const payload = {
+        name: name,
+        date: date,
+        type: type,
+        bracket_data: finalBracketData
+    };
+
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+
+        alert(`Tournament "${name}" created successfully! Redirecting to the bracket page.`);
+        window.location.href = `index.html?id=${result.id}&edit=true`;
+
+    } catch (error) {
+        console.error('Error creating tournament:', error);
+        alert(`Could not create tournament: ${error.message}`);
+    }
+}
+
+// --- Lógica de Inicialização da Página de Admin ---
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('generate-btn').addEventListener('click', createNewTournament);
+    loadAdminTournamentList();
+});
