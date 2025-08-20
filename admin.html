@@ -9,9 +9,19 @@
 </head>
 <body>
     <div id="setup">
-        <h1>Create New Tournament</h1>
-        
+        <h1>Admin Panel</h1>
+
         <div class="setup-section">
+            <h2>Manage Existing Tournaments</h2>
+            <div id="admin-tournament-list">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <div class="setup-divider">OR</div>
+
+        <div class="setup-section">
+            <h2>Create New Tournament</h2>
             <input type="text" id="tournament-name" placeholder="Tournament Name" class="full-width-input">
             <input type="date" id="tournament-date" class="full-width-input">
             
@@ -23,18 +33,15 @@
                 </div>
                 <div>
                     <input type="radio" id="type-double" name="bracket-type" value="double">
-                    <label for-type-double">Double Elimination</label>
+                    <label for="type-double">Double Elimination</label>
                 </div>
             </div>
             
-            <p class="instructions">Enter players one per line...</p>
+            <p class="instructions">Enter players one per line. To assign priority seeds, start the line with a number (e.g., "1. Player Name"). Top seeds will receive available byes automatically.</p>
             <textarea id="player-list" placeholder="1. Isaac Newton..."></textarea>
             
             <button id="generate-btn">Generate and Save Tournament</button>
         </div>
     </div>
-
-    <div id="app-container" style="display: none;">
-        </div>
 </body>
 </html>
