@@ -100,13 +100,16 @@ function _processMatchResult(data, match, bracketName) {
             if (match.id === finalMatch1.id) {
                 const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
                 if (winnerIsFromWinnersBracket) {
+                    // Cenário A: Vencedor da WB ganha, torneio acaba.
                     _advancePlayer(winner, 'Tournament Champion', data);
                     if (loser) _advancePlayer(loser, 'RANK:2º', data);
                 } else {
+                    // Cenário B: Vencedor da LB ganha, força a segunda final (bracket reset).
                     _advancePlayer(winner, `Winner of M${match.id}`, data);
                     _advancePlayer(loser, `Loser of M${match.id}`, data);
                 }
             } else if (finalMatch2 && match.id === finalMatch2.id) {
+                // É a segunda partida da final, o resultado é definitivo.
                 _advancePlayer(winner, 'Tournament Champion', data);
                 if (loser) _advancePlayer(loser, 'RANK:2º', data);
             }
