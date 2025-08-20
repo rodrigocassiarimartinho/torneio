@@ -15,7 +15,7 @@ h1, h2 {
 
 h2 {
     margin: 0;
-    padding: 1.5rem 1.5rem 0 1.5rem; /* Espaçamento apenas acima e dos lados */
+    padding: 20px 20px 0 20px;
 }
 
 #setup {
@@ -190,7 +190,6 @@ textarea {
     width: 100%;
 }
 
-/* O contêiner principal agora é só a "casca" branca */
 #winners-bracket-container, #losers-bracket-container, #grand-final-container {
     background-color: #fff;
     border-radius: 12px;
@@ -198,21 +197,16 @@ textarea {
     width: 100%;
 }
 
-/* Esta nova área contém a chave e o scroll */
 .bracket-area {
     overflow-x: auto;
-    /* A margem constante e menor que você pediu */
-    padding: 1.5rem; 
+    padding: 1.5rem;
 }
 
-/* O wrapper da chave, que contém o SVG e as partidas */
 .bracket-wrapper {
     position: relative;
     width: fit-content;
-    /* Removido o 'margin: 0 auto' para garantir alinhamento à esquerda */
-    padding: 0; /* O espaçamento agora é controlado pelo .bracket-area */
+    padding: 0;
 }
-
 
 .bracket-matches { 
     display: flex; 
@@ -271,7 +265,9 @@ textarea {
     color: #99aab5; 
     cursor: default; 
     opacity: 0.8; 
-    
+}
+
+/* --- NOVAS REGRAS PARA PÁGINA DE ADMIN E LISTAGEM --- */
 .full-width-input {
     width: 95%;
     padding: 10px;
@@ -279,5 +275,83 @@ textarea {
     border: 1px solid #ccc;
     border-radius: 4px;
     margin-bottom: 1rem;
-}    
+}
+
+.setup-section {
+    padding: 1.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+}
+
+.setup-divider {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #ccc;
+    margin: 2rem 0;
+}
+
+#load-id-input {
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    width: 60%;
+    margin-right: 10px;
+}
+
+#save-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #fff;
+    background-color: #28a745;
+    border: 2px solid #28a745;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#save-btn:hover {
+    background-color: #218838;
+    border-color: #218838;
+}
+
+#tournament-list-container {
+    max-width: 800px;
+    margin: 2rem auto;
+}
+
+#tournament-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+#tournament-list li a {
+    display: block;
+    padding: 1rem 1.5rem;
+    background-color: #fff;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    text-decoration: none;
+    color: #333;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    transition: all 0.2s ease;
+}
+
+#tournament-list li a:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.tournament-name {
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: #041A4A;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.tournament-details {
+    font-size: 0.9rem;
+    color: #777;
 }
