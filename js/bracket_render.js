@@ -1,4 +1,4 @@
-// js/bracket_render.js - Versão com suporte a isReadOnly
+// js/bracket_render.js - Versão final completa com renderRanking
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -18,7 +18,14 @@ function createMatchSVG(matchData, isReadOnly = false) {
         const nameClass = winner.isPlaceholder ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-                <rect x="1" y="1" width="${CONFIG.SVG_WIDTH - 2}" height="${CONFIG.SVG_HEIGHT - 2}" rx="6" fill="#041A4A" stroke="#D9A42A" stroke-width="2"/>
+                <rect 
+                    x="1" y="1" 
+                    width="${CONFIG.SVG_WIDTH - 2}" height="${CONFIG.SVG_HEIGHT - 2}" 
+                    rx="6" 
+                    fill="#041A4A" 
+                    stroke="#D9A42A" 
+                    stroke-width="2"
+                />
                 <text x="50%" y="24" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">Champion</text>
                 <text x="50%" y="46" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
             </svg>
@@ -192,4 +199,40 @@ export function renderBracket(roundsData, targetSelector, isReadOnly = false) {
         container.appendChild(roundEl);
     });
     runLayoutAndDraw(targetSelector, roundsData);
+}
+
+export function renderRanking(rankingData, targetSelector) {
+    const container = document.querySelector(targetSelector);
+    if (!container) return;
+
+    if (!rankingData || Object.keys(rankingData).length === 0) {
+        container.innerHTML = '<p>No players eliminated yet.</p>';
+        return;
+    }
+
+    const sortedPlacements = Object.keys(rankingData).sort((a, b) => {
+        const placeA = parseInt(a);
+        const placeB = parseInt(b);
+        return placeA - placeB;
+    });
+
+    let tableHTML = '<table><thead><tr><th>#</th><th>Player</th><th>Seed</th></tr></thead><tbody>';
+    
+    for(const placement of sortedPlacements) {
+        const players = rankingData[placement];
+        if (players.length > 0) {
+            players.forEach(player => {
+                tableHTML += `
+                    <tr>
+                        <td>${placement.replace(' Place','').replace('th','º').replace('rd','º').replace('nd','º').replace('st','º')}</td>
+                        <td>${player.name}</td>
+                        <td>${player.seed || '-'}</td>
+                    </tr>
+                `;
+            });
+        }
+    }
+
+    tableHTML += '</tbody></table>';
+    container.innerHTML = tableHTML;
 }
