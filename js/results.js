@@ -1,4 +1,4 @@
-// js/results.js - Versão com a lógica da Grande Final totalmente corrigida
+// js/results.js - Versão com a lógica da Grande Final e do Campeão totalmente corrigida
 
 let currentTournamentData = {};
 let undoHistory = [];
@@ -92,7 +92,6 @@ function _processMatchResult(data, match, bracketName) {
     const { winner, loser } = _determineWinner(match);
 
     if (winner) {
-        // --- INÍCIO DA CORREÇÃO DA LÓGICA DA GRANDE FINAL ---
         if (bracketName === 'grandFinal' && data.grandFinal && data.grandFinal.length > 1) {
             const finalMatch1 = data.grandFinal[0][0];
             const finalMatch2 = data.grandFinal[1] ? data.grandFinal[1][0] : null;
@@ -100,21 +99,17 @@ function _processMatchResult(data, match, bracketName) {
             if (match.id === finalMatch1.id) {
                 const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
                 if (winnerIsFromWinnersBracket) {
-                    // Cenário A: Vencedor da WB ganha, torneio acaba.
                     _advancePlayer(winner, 'Tournament Champion', data);
                     if (loser) _advancePlayer(loser, 'RANK:2º', data);
                 } else {
-                    // Cenário B: Vencedor da LB ganha, força a segunda final (bracket reset).
                     _advancePlayer(winner, `Winner of M${match.id}`, data);
                     _advancePlayer(loser, `Loser of M${match.id}`, data);
                 }
             } else if (finalMatch2 && match.id === finalMatch2.id) {
-                // É a segunda partida da final, o resultado é definitivo.
                 _advancePlayer(winner, 'Tournament Champion', data);
                 if (loser) _advancePlayer(loser, 'RANK:2º', data);
             }
         } else {
-            // Lógica para todas as outras partidas
             const winnerDestination = match.winnerDestination || `Winner of M${match.id}`;
             _advancePlayer(winner, winnerDestination, data);
        
@@ -125,7 +120,6 @@ function _processMatchResult(data, match, bracketName) {
                 }
             }
         }
-        // --- FIM DA CORREÇÃO ---
         
         match.isProcessed = true;
         return true;
@@ -167,8 +161,18 @@ function _stabilizeBracket(data) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
                     if (!match || match.isProcessed) continue;
+                    
+                    // --- INÍCIO DA CORREÇÃO ---
                     const hasScore = (match.p1 && match.p1.score !== undefined) || (match.p2 && match.p2.score !== undefined);
-                    if (hasScore) { if (_processMatchResult(dataCopy, match, bracketInfo.name)) { changesMade = true; } }
+                    // A Caixa do Campeão não tem placar, mas precisa ser processada.
+                    const isProcessableChampionBox = match.isChampionBox && match.p1 && !match.p1.isPlaceholder;
+                    
+                    if (hasScore || isProcessableChampionBox) { 
+                        if (_processMatchResult(dataCopy, match, bracketInfo.name)) { 
+                            changesMade = true; 
+                        } 
+                    }
+                    // --- FIM DA CORREÇÃO ---
                 }
             }
         }
