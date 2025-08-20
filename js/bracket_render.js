@@ -1,4 +1,4 @@
-// js/bracket_render.js - Versão final completa com renderRanking
+// js/bracket_render.js - Versão com tabela de ranking simplificada e rótulos corrigidos
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -18,14 +18,7 @@ function createMatchSVG(matchData, isReadOnly = false) {
         const nameClass = winner.isPlaceholder ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-                <rect 
-                    x="1" y="1" 
-                    width="${CONFIG.SVG_WIDTH - 2}" height="${CONFIG.SVG_HEIGHT - 2}" 
-                    rx="6" 
-                    fill="#041A4A" 
-                    stroke="#D9A42A" 
-                    stroke-width="2"
-                />
+                <rect x="1" y="1" width="${CONFIG.SVG_WIDTH - 2}" height="${CONFIG.SVG_HEIGHT - 2}" rx="6" fill="#041A4A" stroke="#D9A42A" stroke-width="2"/>
                 <text x="50%" y="24" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">Champion</text>
                 <text x="50%" y="46" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
             </svg>
@@ -69,9 +62,9 @@ function layoutBracket(targetSelector) {
     const matchesContainer = document.querySelector(targetSelector);
     if (!matchesContainer) return;
     const rounds = Array.from(matchesContainer.querySelectorAll('.round'));
-    if (rounds.length === 0 || rounds[0].children.length === 0) { return; };
+    if (rounds.length === 0 || (rounds.length > 0 && rounds.every(round => round.children.length === 0))) return;
     const blockHeight = CONFIG.SVG_HEIGHT + CONFIG.VERTICAL_GAP;
-    const firstRoundMatchCount = rounds[0].children.length;
+    const firstRoundMatchCount = rounds.length > 0 ? rounds[0].children.length : 0;
     const totalBracketHeight = firstRoundMatchCount * blockHeight;
     rounds.forEach((roundEl) => {
         const matchesInThisRound = Array.from(roundEl.children);
@@ -100,7 +93,7 @@ function drawConnectors(targetSelector) {
     const wrapper = matchesContainer.closest('.bracket-wrapper');
     const svg = wrapper.querySelector('.connector-svg');
     if (!svg || !wrapper) return;
-    svg.innerHTML = ''; 
+    svg.innerHTML = '';
     const rounds = matchesContainer.querySelectorAll('.round');
     const horizontalMidpoint = CONFIG.ROUND_GAP / 2;
     for (let r = 0; r < rounds.length; r++) {
@@ -216,17 +209,19 @@ export function renderRanking(rankingData, targetSelector) {
         return placeA - placeB;
     });
 
-    let tableHTML = '<table><thead><tr><th>#</th><th>Player</th><th>Seed</th></tr></thead><tbody>';
-    
+    let tableHTML = '<table><thead><tr><th>#</th><th>Player</th></tr></thead><tbody>';
+
     for(const placement of sortedPlacements) {
         const players = rankingData[placement];
         if (players.length > 0) {
+            // Limpa o rótulo para exibição (removendo " Place")
+            const cleanPlacement = placement.replace(' Place', '');
+
             players.forEach(player => {
                 tableHTML += `
                     <tr>
-                        <td>${placement.replace(' Place','').replace('th','º').replace('rd','º').replace('nd','º').replace('st','º')}</td>
+                        <td>${cleanPlacement}</td>
                         <td>${player.name}</td>
-                        <td>${player.seed || '-'}</td>
                     </tr>
                 `;
             });
