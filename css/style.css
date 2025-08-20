@@ -271,4 +271,13 @@ textarea {
     color: #99aab5; 
     cursor: default; 
     opacity: 0.8; 
+    
+.full-width-input {
+    width: 95%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}    
 }
