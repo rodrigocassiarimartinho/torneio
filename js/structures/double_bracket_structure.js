@@ -1,17 +1,20 @@
 // js/structures/double_bracket_structure.js
-// Versão com a formatação de rótulos do ranking corrigida.
+// Versão com a lógica de ranking do campeão e formatação de rótulos corrigida.
 
 import * as TMath from '../math.js';
 
 /**
- * Converte um número para sua forma ordinal em inglês (1st, 2nd, 3rd, 4th).
- * @param {number} n O número a ser convertido.
- * @returns {string} O número com o sufixo ordinal.
+ * Formata um rótulo de colocação para o formato "5th to 6th Place".
+ * @param {number} start O início da faixa de colocação.
+ * @param {number} count O número de jogadores nessa faixa.
+ * @returns {string} O rótulo formatado.
  */
-function getOrdinal(n) {
-    const s = ["th", "st", "nd", "rd"];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+function formatPlacement(start, count) {
+    if (count === 1) {
+        return `${start}º Place`;
+    }
+    const end = start + count - 1;
+    return `${start}º to ${end}º Place`;
 }
 
 export function buildDoubleBracketStructure(n_original) {
@@ -75,8 +78,8 @@ export function buildDoubleBracketStructure(n_original) {
         }
     }
 
-    ranking['1st Place'] = [];
-    ranking['2nd Place'] = [];
+    ranking['1º Place'] = [];
+    ranking['2º Place'] = [];
     let currentPlacement = 3;
 
     for (let r = losersBracket.length - 1; r >= 0; r--) {
@@ -84,23 +87,7 @@ export function buildDoubleBracketStructure(n_original) {
         const playersInTier = round.length;
         if (playersInTier === 0) continue;
 
-        let placementLabel;
-        if (playersInTier > 1) {
-            const lastPlaceInTier = currentPlacement + playersInTier - 1;
-            placementLabel = `${getOrdinal(currentPlacement)}-${getOrdinal(lastPlaceInTier)} Place`;
-        } else {
-             placementLabel = `${getOrdinal(currentPlacement)} Place`;
-             if (currentPlacement === 3 && losersBracket.length > 1) {
-                const prevRound = losersBracket[r-1];
-                if (prevRound) {
-                    const fourthPlaceLabel = `${getOrdinal(4)} Place`;
-                    ranking[fourthPlaceLabel] = [];
-                    prevRound.forEach(match => {
-                        match.loserDestination = `RANK:${fourthPlaceLabel}`;
-                    });
-                }
-            }
-        }
+        const placementLabel = formatPlacement(currentPlacement, playersInTier);
         
         ranking[placementLabel] = [];
         round.forEach(match => {
@@ -116,16 +103,21 @@ export function buildDoubleBracketStructure(n_original) {
         const finalMatch1 = { id: matchIdCounter++, p1: wbFinalWinner, p2: lbFinalWinner };
         
         if (losersBracket.length === 0) {
-            finalMatch1.winnerDestination = `RANK:1st Place`;
-            finalMatch1.loserDestination = `RANK:2nd Place`;
+            finalMatch1.winnerDestination = `RANK:1º Place`;
+            finalMatch1.loserDestination = `RANK:2º Place`;
             grandFinal.push([finalMatch1]);
         } else {
             const finalMatch2 = { id: matchIdCounter++, p1: { name: `Winner of M${finalMatch1.id}`, isPlaceholder: true }, p2: { name: `Loser of M${finalMatch1.id}`, isPlaceholder: true } };
-            const championBox = { id: matchIdCounter++, isChampionBox: true, p1: { name: `Winner of M${finalMatch2.id}`, isPlaceholder: true }, p2: null, winnerDestination: `RANK:1st Place` };
+            const championBox = { id: matchIdCounter++, isChampionBox: true, p1: { name: `Winner of M${finalMatch1.id}`, isPlaceholder: true }, winnerDestination: `RANK:1º Place` };
+
+            finalMatch1.winnerDestination = `Winner of M${finalMatch1.id}`; // Vencedor avança para a final 2
+            finalMatch1.loserDestination = `RANK:2º Place`;
             
-            finalMatch1.loserDestination = `RANK:2nd Place`;
-            finalMatch2.winnerDestination = `RANK:1st Place`;
-            finalMatch2.loserDestination = `RANK:2nd Place`;
+            finalMatch2.winnerDestination = `RANK:1º Place`; // Vencedor da final 2 é o campeão
+            finalMatch2.loserDestination = `RANK:2º Place`;
+            
+            // O campeão também é o vencedor da final 1 (se não houver reset)
+            winnersBracket[numWinnersRounds-1][0].winnerDestination = `Winner of M${winnersBracket[numWinnersRounds-1][0].id}`;
 
             grandFinal.push([finalMatch1], [finalMatch2], [championBox]);
         }
