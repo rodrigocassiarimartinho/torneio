@@ -1,4 +1,9 @@
 <?php
+// Adicione estas 3 linhas para depuração
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
 require_once 'config.php';
 $conn = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
