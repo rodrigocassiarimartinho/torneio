@@ -234,3 +234,50 @@ textarea {
 .admin-links .delete-link:hover {
     color: #a71d2a;
 }
+
+.main-content {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+}
+
+.brackets-column {
+    flex-grow: 1; /* A coluna da chave ocupará o espaço disponível */
+}
+
+#ranking-column {
+    width: 320px; /* Largura fixa para a coluna de ranking */
+    flex-shrink: 0; /* Impede que a coluna encolha */
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.05);
+    padding: 20px;
+}
+
+#ranking-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+#ranking-table th, #ranking-table td {
+    padding: 10px 8px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+#ranking-table th {
+    font-weight: 600;
+    color: #333;
+}
+
+#ranking-table td:first-child {
+    font-weight: bold;
+    color: #041A4A;
+    text-align: center;
+    width: 1%;
+}
+
+#ranking-table tr:last-child td {
+    border-bottom: none;
+}
