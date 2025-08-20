@@ -1,8 +1,13 @@
-// js/results.js - Versão com a lógica da Grande Final e do Campeão totalmente corrigida
+// js/results.js - Versão com persistência de histórico Undo/Redo
 
-let currentTournamentData = {};
-let undoHistory = [];
-let redoHistory = [];
+// --- ESTADO INTERNO DO MÓDULO ---
+let sessionState = {
+    currentState: {},
+    undoHistory: [],
+    redoHistory: []
+};
+
+// --- FUNÇÕES "PRIVADAS" (AUXILIARES) ---
 
 function _findMatchInTournament(matchId, tournamentData) {
     if (tournamentData.type === 'single') {
@@ -162,9 +167,7 @@ function _stabilizeBracket(data) {
                 for (const match of (round || [])) {
                     if (!match || match.isProcessed) continue;
                     
-                    // --- INÍCIO DA CORREÇÃO ---
                     const hasScore = (match.p1 && match.p1.score !== undefined) || (match.p2 && match.p2.score !== undefined);
-                    // A Caixa do Campeão não tem placar, mas precisa ser processada.
                     const isProcessableChampionBox = match.isChampionBox && match.p1 && !match.p1.isPlaceholder;
                     
                     if (hasScore || isProcessableChampionBox) { 
@@ -172,7 +175,6 @@ function _stabilizeBracket(data) {
                             changesMade = true; 
                         } 
                     }
-                    // --- FIM DA CORREÇÃO ---
                 }
             }
         }
@@ -180,50 +182,56 @@ function _stabilizeBracket(data) {
     return dataCopy;
 }
 
-export function initializeBracket(populatedBracket) {
-    undoHistory = [];
-    redoHistory = [];
-    currentTournamentData = _stabilizeBracket(populatedBracket);
+
+// --- FUNÇÕES "PÚBLICAS" EXPORTADAS ---
+
+export function initializeBracket(data) {
+    if (data && data.currentState) {
+        sessionState = data;
+    } else {
+        sessionState = {
+            currentState: _stabilizeBracket(data),
+            undoHistory: [],
+            redoHistory: []
+        };
+    }
 }
 
 export function updateScore(matchId, playerSlot, newScore) {
-    const { match } = _findMatchInTournament(matchId, currentTournamentData);
+    const { match } = _findMatchInTournament(matchId, sessionState.currentState);
     if (!match) return;
     
-    const isFirstScoreInteraction = !(match.p1 && match.p1.score !== undefined) && !(match.p2 && match.p2.score !== undefined);
-    if (isFirstScoreInteraction) {
-        undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
-        redoHistory = [];
-    }
-
+    sessionState.undoHistory.push(JSON.parse(JSON.stringify(sessionState.currentState)));
+    sessionState.redoHistory = [];
+    
     if (!match[playerSlot]) match[playerSlot] = {};
     match[playerSlot].score = newScore;
-    match.isProcessed = false; 
+    match[playerSlot].isProcessed = false; 
 
-    currentTournamentData = _stabilizeBracket(currentTournamentData);
+    sessionState.currentState = _stabilizeBracket(sessionState.currentState);
 }
 
 export function undo() {
-    if (undoHistory.length > 0) {
-        redoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
-        currentTournamentData = undoHistory.pop();
+    if (sessionState.undoHistory.length > 0) {
+        sessionState.redoHistory.push(JSON.parse(JSON.stringify(sessionState.currentState)));
+        sessionState.currentState = sessionState.undoHistory.pop();
     }
 }
 
 export function redo() {
-    if (redoHistory.length > 0) {
-        undoHistory.push(JSON.parse(JSON.stringify(currentTournamentData)));
-        currentTournamentData = redoHistory.pop();
+    if (sessionState.redoHistory.length > 0) {
+        sessionState.undoHistory.push(JSON.parse(JSON.stringify(sessionState.currentState)));
+        sessionState.currentState = sessionState.redoHistory.pop();
     }
 }
 
-export function getCurrentData() {
-    return JSON.parse(JSON.stringify(currentTournamentData));
+export function getCurrentSessionState() {
+    return JSON.parse(JSON.stringify(sessionState));
 }
 
 export function getHistoryState() {
     return {
-        canUndo: undoHistory.length > 0,
-        canRedo: redoHistory.length > 0
+        canUndo: sessionState.undoHistory.length > 0,
+        canRedo: sessionState.redoHistory.length > 0
     };
 }
