@@ -3,30 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tournament Bracket Generator</title>
+    <title>Tournament Brackets</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="js/main.js" type="module" defer></script>
 </head>
 <body>
 
-    <div id="setup">
-        <h1>Bracket Generator</h1>
-        <div class="tournament-type-selector">
-            <p>Select bracket type:</p>
-            <div>
-                <input type="radio" id="type-single" name="bracket-type" value="single" checked>
-                <label for="type-single">Single Elimination</label>
+    <div id="tournament-list-container">
+        <h1>Tournament List</h1>
+        <div id="tournament-list">
             </div>
-            <div>
-                <input type="radio" id="type-double" name="bracket-type" value="double">
-                <label for="type-double">Double Elimination</label>
-            </div>
-        </div>
-        
-        <p class="instructions">Enter players one per line. To assign priority seeds, start the line with a number (e.g., "1. Player Name"). Top seeds will receive available byes automatically.</p>
-        <textarea id="player-list" placeholder="1. Isaac Newton&#10;2. Marie Curie&#10;Albert Einstein&#10;Leonardo da Vinci&#10;..."></textarea>
-
-        <button id="generate-btn">Generate Bracket</button>
     </div>
 
     <div id="app-container" style="display: none;">
@@ -35,9 +21,8 @@
                 <button id="undo-btn" title="Undo" disabled></button>
                 <button id="redo-btn" title="Redo" disabled></button>
             </div>
-            <h1>Tournament Bracket</h1>
-            <div class="header-buttons-right">
-                <button id="reset-btn">Reset</button>
+            <h1>Tournament Bracket</h1> <div class="header-buttons-right">
+                <button id="reset-btn">Back to List</button>
             </div>
         </header>
         
