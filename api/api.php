@@ -1,9 +1,4 @@
 <?php
-
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 require_once 'config.php';
 $conn = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
@@ -15,7 +10,6 @@ if ($method == 'GET') {
         handleGetRequest($conn);
     }
 } elseif ($method == 'POST') {
-    // A lógica POST agora verifica uma ação específica (delete)
     $data = json_decode(file_get_contents('php://input'));
     if (isset($data->action) && $data->action == 'delete') {
         handleDeleteRequest($conn, $data);
@@ -67,7 +61,6 @@ function handlePostRequest($conn, $data) {
     $stmt->close();
 }
 
-// --- INÍCIO DA NOVA FUNÇÃO ---
 function handleDeleteRequest($conn, $data) {
     if (!isset($data->public_id) || empty($data->public_id)) {
         http_response_code(400);
@@ -93,14 +86,50 @@ function handleDeleteRequest($conn, $data) {
     }
     $stmt->close();
 }
-// --- FIM DA NOVA FUNÇÃO ---
-
 
 function handleGetRequest($conn) {
-    // ... (função inalterada)
+    if (!isset($_GET['id'])) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Tournament ID is required.']);
+        return;
+    }
+    $public_id = $_GET['id'];
+    $stmt = $conn->prepare("SELECT name, tournament_date, type, bracket_data FROM tournaments WHERE public_id = ?");
+    $stmt->bind_param("s", $public_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $row['bracket_data'] = json_decode($row['bracket_data']); 
+        http_response_code(200);
+        echo json_encode($row);
+    } else {
+        http_response_code(404);
+        echo json_encode(['message' => 'Tournament not found.']);
+    }
+    $stmt->close();
 }
 
+// --- INÍCIO DA CORREÇÃO ---
 function handleListRequest($conn) {
-    // ... (função inalterada)
+    $result = $conn->query("SELECT public_id, name, tournament_date, type FROM tournaments ORDER BY tournament_date DESC, name ASC");
+
+    // Adiciona uma verificação para ver se a consulta SQL falhou
+    if ($result === false) {
+        http_response_code(500); // Internal Server Error
+        // Retorna o erro específico do MySQL para nos ajudar a depurar
+        echo json_encode(['message' => 'Database query failed.', 'error' => $conn->error]);
+        return; // Para a execução
+    }
+
+    $tournaments = [];
+    if ($result->num_rows > 0) {
+        while($row = $result->fetch_assoc()) {
+            $tournaments[] = $row;
+        }
+    }
+    http_response_code(200);
+    echo json_encode($tournaments);
 }
+// --- FIM DA CORREÇÃO ---
 ?>
