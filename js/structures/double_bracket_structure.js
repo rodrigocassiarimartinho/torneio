@@ -1,8 +1,18 @@
 // js/structures/double_bracket_structure.js
-// Responsável por criar o "esqueleto" de uma chave de dupla eliminação,
-// incluindo a geração dinâmica da estrutura de classificação.
+// Versão com a formatação de rótulos do ranking corrigida.
 
 import * as TMath from '../math.js';
+
+/**
+ * Converte um número para sua forma ordinal em inglês (1st, 2nd, 3rd, 4th).
+ * @param {number} n O número a ser convertido.
+ * @returns {string} O número com o sufixo ordinal.
+ */
+function getOrdinal(n) {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
 
 export function buildDoubleBracketStructure(n_original) {
     const bracketSize = TMath.getNextPowerOfTwo(n_original);
@@ -14,7 +24,6 @@ export function buildDoubleBracketStructure(n_original) {
     const grandFinal = [];
     const ranking = {};
 
-    // 1. Constrói esqueletos da WB e LB
     const numWinnersRounds = TMath.getWinnersBracketRoundsCount(bracketSize);
     for (let i = 1; i <= numWinnersRounds; i++) {
         winnersBracket.push(Array.from({ length: TMath.getWinnersRoundMatchCount(i, bracketSize) }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
@@ -24,7 +33,6 @@ export function buildDoubleBracketStructure(n_original) {
         losersBracket.push(Array.from({ length: TMath.getLosersRoundMatchCount(i, bracketSize) }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
     }
 
-    // 2. Preenche WB com placeholders
     for(let r=0; r < winnersBracket.length - 1; r++) {
         const currentRound = winnersBracket[r];
         const nextRound = winnersBracket[r+1];
@@ -34,7 +42,6 @@ export function buildDoubleBracketStructure(n_original) {
         });
     }
 
-    // 3. Preenche LB com placeholders de vencedores da WB e da própria LB
     if (losersBracket.length > 0 && winnersBracket.length > 0) {
         if (losersBracket[0]) {
             const losersFromV1 = winnersBracket[0].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
@@ -68,10 +75,10 @@ export function buildDoubleBracketStructure(n_original) {
         }
     }
 
-    // 4. Gera o esqueleto do ranking e atribui destinos aos perdedores da Losers Bracket
     ranking['1st Place'] = [];
     ranking['2nd Place'] = [];
     let currentPlacement = 3;
+
     for (let r = losersBracket.length - 1; r >= 0; r--) {
         const round = losersBracket[r];
         const playersInTier = round.length;
@@ -80,17 +87,16 @@ export function buildDoubleBracketStructure(n_original) {
         let placementLabel;
         if (playersInTier > 1) {
             const lastPlaceInTier = currentPlacement + playersInTier - 1;
-            placementLabel = `${currentPlacement}th-${lastPlaceInTier}th Place`;
+            placementLabel = `${getOrdinal(currentPlacement)}-${getOrdinal(lastPlaceInTier)} Place`;
         } else {
-            placementLabel = `${currentPlacement}rd Place`;
-            // Lógica para 4º lugar, se houver
-            if (currentPlacement === 3 && losersBracket.length > 1) {
-                placementLabel = '3rd Place';
-                ranking['4th Place'] = [];
+             placementLabel = `${getOrdinal(currentPlacement)} Place`;
+             if (currentPlacement === 3 && losersBracket.length > 1) {
                 const prevRound = losersBracket[r-1];
                 if (prevRound) {
+                    const fourthPlaceLabel = `${getOrdinal(4)} Place`;
+                    ranking[fourthPlaceLabel] = [];
                     prevRound.forEach(match => {
-                        match.loserDestination = `RANK:4th Place`;
+                        match.loserDestination = `RANK:${fourthPlaceLabel}`;
                     });
                 }
             }
@@ -103,7 +109,6 @@ export function buildDoubleBracketStructure(n_original) {
         currentPlacement += playersInTier;
     }
     
-    // 5. Constrói e atribui destinos para a Grande Final
     if (bracketSize >= 2) {
         const wbFinalWinner = { name: `Winner of M${winnersBracket[numWinnersRounds-1][0].id}`, isPlaceholder: true };
         const lbFinalWinner = losersBracket.length > 0 ? { name: `Winner of M${losersBracket[numLosersRounds-1][0].id}`, isPlaceholder: true } : {name: 'TBD'};
