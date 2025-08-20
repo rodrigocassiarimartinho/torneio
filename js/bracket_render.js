@@ -1,6 +1,4 @@
-// js/bracket_render.js - Versão Final Limpa e Comentada
-// Este módulo é responsável por toda a parte visual: desenhar
-// as partidas, os conectores e atualizar os placares na tela.
+// js/bracket_render.js - Versão com suporte a isReadOnly
 
 const CONFIG = {
     SVG_WIDTH: 300,
@@ -13,35 +11,20 @@ const CONFIG = {
     ROUND_GAP: 40,
 };
 
-/**
- * Cria o código SVG para uma única partida ou para a caixa do campeão.
- * @param {object} matchData O objeto da partida.
- * @returns {string} O HTML do SVG a ser renderizado.
- */
-function createMatchSVG(matchData) {
-    // Caso especial: Renderiza a caixa de campeão com um estilo único.
+function createMatchSVG(matchData, isReadOnly = false) {
     if (matchData.isChampionBox) {
         const winner = matchData.p1 || { name: 'TBD', isPlaceholder: true };
         const winnerName = winner.name.length > 25 ? winner.name.substring(0, 22) + '...' : winner.name;
         const nameClass = winner.isPlaceholder ? 'svg-text-name svg-text-placeholder' : 'svg-text-name';
-
         return `
             <svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-                <rect 
-                    x="1" y="1" 
-                    width="${CONFIG.SVG_WIDTH - 2}" height="${CONFIG.SVG_HEIGHT - 2}" 
-                    rx="6" 
-                    fill="#041A4A" 
-                    stroke="#D9A42A" 
-                    stroke-width="2"
-                />
+                <rect x="1" y="1" width="${CONFIG.SVG_WIDTH - 2}" height="${CONFIG.SVG_HEIGHT - 2}" rx="6" fill="#041A4A" stroke="#D9A42A" stroke-width="2"/>
                 <text x="50%" y="24" dominant-baseline="middle" text-anchor="middle" font-size="14" font-weight="600" fill="#FFFFFF" letter-spacing="1.5">Champion</text>
                 <text x="50%" y="46" dominant-baseline="middle" text-anchor="middle" class="${nameClass}" font-size="18" font-weight="bold" fill="#FFFFFF">${winnerName}</text>
             </svg>
         `;
     }
 
-    // Caminho Padrão: Renderiza uma partida normal com dois jogadores.
     const p1_Y = 18, p2_Y = 47;
     let p1 = { name: 'Bye', seed: null, ...matchData.p1 };
     let p2 = { name: 'Bye', seed: null, ...matchData.p2 };
@@ -62,7 +45,7 @@ function createMatchSVG(matchData) {
     let scoreOptions = `<option value="--">--</option><option value="WO">WO</option>`;
     for(let i = 0; i <= 31; i++) { scoreOptions += `<option value="${i}">${i}</option>`; }
 
-    const isDisabled = name1Class.includes('placeholder') || name2Class.includes('placeholder') || p1.name === 'Bye' || p2.name === 'Bye';
+    const isDisabled = isReadOnly || name1Class.includes('placeholder') || name2Class.includes('placeholder') || p1.name === 'Bye' || p2.name === 'Bye';
     const isByeMatch = p1.isBye || p2.isBye;
     let scoreInputsHTML = '';
 
@@ -75,30 +58,21 @@ function createMatchSVG(matchData) {
     return `<svg width="${CONFIG.SVG_WIDTH}" height="${CONFIG.SVG_HEIGHT}" xmlns="http://www.w3.org/2000/svg"><rect x="0.5" y="0.5" width="${CONFIG.SVG_WIDTH - 1}" height="${CONFIG.SVG_HEIGHT - 1}" rx="6" fill="#E9ECEF" stroke="#DEE2E6" stroke-width="1"/><path d="M 0 6 C 0 2.686 2.686 0 6 0 H ${CONFIG.ID_COLUMN_WIDTH} V ${CONFIG.SVG_HEIGHT} H 6 C 2.686 ${CONFIG.SVG_HEIGHT} 0 ${CONFIG.SVG_HEIGHT-2.686} 0 ${CONFIG.SVG_HEIGHT-6} V 6 Z" fill="#D9A42A"/><text x="${CONFIG.ID_COLUMN_WIDTH / 2}" y="${CONFIG.SVG_HEIGHT / 2}" dominant-baseline="middle" text-anchor="middle" class="svg-text-id" fill="#041A4A">M${matchData.id}</text><line x1="${CONFIG.ID_COLUMN_WIDTH + 5}" y1="${CONFIG.SVG_HEIGHT / 2}" x2="${CONFIG.SVG_WIDTH - CONFIG.SCORE_BOX_WIDTH - 20}" y2="${CONFIG.SVG_HEIGHT / 2}" stroke="#DEE2E6" stroke-width="1" stroke-dasharray="3 3"/><g>${seed1HTML}<text x="${nameX}" y="${p1_Y}" dominant-baseline="middle" class="${name1Class}" fill="#041A4A">${p1.name}</text></g><g>${seed2HTML}<text x="${nameX}" y="${p2_Y}" dominant-baseline="middle" class="${name2Class}" fill="#041A4A">${p2.name}</text></g>${scoreInputsHTML}</svg>`;
 }
 
-/**
- * Calcula a posição vertical de cada partida dentro de sua respectiva rodada.
- */
 function layoutBracket(targetSelector) {
     const matchesContainer = document.querySelector(targetSelector);
     if (!matchesContainer) return;
-
     const rounds = Array.from(matchesContainer.querySelectorAll('.round'));
     if (rounds.length === 0 || rounds[0].children.length === 0) { return; };
-    
     const blockHeight = CONFIG.SVG_HEIGHT + CONFIG.VERTICAL_GAP;
     const firstRoundMatchCount = rounds[0].children.length;
     const totalBracketHeight = firstRoundMatchCount * blockHeight;
-
     rounds.forEach((roundEl) => {
         const matchesInThisRound = Array.from(roundEl.children);
         const numMatches = matchesInThisRound.length;
         if (numMatches === 0) return;
-
         const roundWidth = CONFIG.SVG_WIDTH + (CONFIG.MATCH_MARGIN_X * 2);
         roundEl.style.width = `${roundWidth}px`;
-        
         const slotHeight = totalBracketHeight / numMatches;
-
         matchesInThisRound.forEach((match, matchIndex) => {
             const centerY = (matchIndex * slotHeight) + (slotHeight / 2);
             const topPos = centerY - (CONFIG.SVG_HEIGHT / 2);
@@ -106,38 +80,28 @@ function layoutBracket(targetSelector) {
             match.style.left = `${CONFIG.MATCH_MARGIN_X}px`;
         });
     });
-
     const wrapperEl = matchesContainer.closest('.bracket-wrapper');
     const svgEl = wrapperEl.querySelector('.connector-svg');
-
     matchesContainer.style.height = `${totalBracketHeight}px`;
     wrapperEl.style.height = `${totalBracketHeight + 40}px`;
     svgEl.style.height = `${totalBracketHeight + 40}px`;
 }
 
-/**
- * Desenha as linhas SVG que conectam as partidas entre as rodadas.
- */
 function drawConnectors(targetSelector) {
     const matchesContainer = document.querySelector(targetSelector);
     if (!matchesContainer) return;
-
     const wrapper = matchesContainer.closest('.bracket-wrapper');
     const svg = wrapper.querySelector('.connector-svg');
     if (!svg || !wrapper) return;
     svg.innerHTML = ''; 
-
     const rounds = matchesContainer.querySelectorAll('.round');
     const horizontalMidpoint = CONFIG.ROUND_GAP / 2;
-
     for (let r = 0; r < rounds.length; r++) {
         const currentRoundMatches = Array.from(rounds[r].querySelectorAll('.match'));
-        
         currentRoundMatches.forEach((match) => {
             const matchRect = match.getBoundingClientRect();
             const wrapperRect = wrapper.getBoundingClientRect();
             const startY = matchRect.top + matchRect.height / 2 - wrapperRect.top;
-            
             if (r < rounds.length - 1) {
                 const isChampionBox = !!match.querySelector('rect[stroke="#D9A42A"]');
                 if(!isChampionBox) {
@@ -146,7 +110,6 @@ function drawConnectors(targetSelector) {
                     createLine(startX, startY, endX, startY, svg);
                 }
             }
-            
             if (r > 0) {
                 const endX = matchRect.left - wrapperRect.left;
                 const startX = endX - horizontalMidpoint;
@@ -154,11 +117,9 @@ function drawConnectors(targetSelector) {
             }
         });
     }
-
     for (let r = 0; r < rounds.length - 1; r++) {
         const currentRoundMatches = rounds[r].querySelectorAll('.match');
         const nextRoundMatches = rounds[r+1].querySelectorAll('.match');
-
         if (nextRoundMatches.length === currentRoundMatches.length / 2) {
              nextRoundMatches.forEach((childMatch, childIndex) => {
                 const parent1 = currentRoundMatches[childIndex * 2];
@@ -167,7 +128,6 @@ function drawConnectors(targetSelector) {
                     const p1Rect = parent1.getBoundingClientRect();
                     const p2Rect = parent2.getBoundingClientRect();
                     const wrapperRect = wrapper.getBoundingClientRect();
-
                     const midX = p1Rect.right - wrapperRect.left + horizontalMidpoint;
                     const y1 = p1Rect.top + p1Rect.height / 2 - wrapperRect.top;
                     const y2 = p2Rect.top + p2Rect.height / 2 - wrapperRect.top;
@@ -187,17 +147,12 @@ function createLine(x1, y1, x2, y2, svg) {
     svg.appendChild(path);
 }
 
-/**
- * Garante que os valores nos dropdowns de placar reflitam o estado atual dos dados.
- */
 function updateDropdownValues(roundsData, targetSelector) {
     if(!roundsData) return;
     const container = document.querySelector(targetSelector);
     if(!container) return;
-    
     const allMatches = roundsData.flat();
     const selects = container.querySelectorAll('.score-select');
-
     selects.forEach(select => {
         const matchId = parseInt(select.dataset.matchId);
         const playerSlot = select.dataset.playerSlot;
@@ -210,9 +165,6 @@ function updateDropdownValues(roundsData, targetSelector) {
     });
 }
 
-/**
- * Orquestra as funções de layout e desenho, usando requestAnimationFrame para otimização.
- */
 export function runLayoutAndDraw(targetSelector, roundsData) {
     layoutBracket(targetSelector);
     window.requestAnimationFrame(() => {
@@ -221,15 +173,11 @@ export function runLayoutAndDraw(targetSelector, roundsData) {
     });
 }
 
-/**
- * Função principal exportada que renderiza um bracket inteiro em um container.
- */
-export function renderBracket(roundsData, targetSelector) {
+export function renderBracket(roundsData, targetSelector, isReadOnly = false) {
     const container = document.querySelector(targetSelector);
     if (!container) return;
     container.innerHTML = '';
     if (!roundsData || roundsData.length === 0) return;
-
     roundsData.forEach(roundData => {
         const roundEl = document.createElement('div');
         roundEl.className = 'round';
@@ -238,11 +186,10 @@ export function renderBracket(roundsData, targetSelector) {
             const matchEl = document.createElement('div');
             matchEl.className = 'match';
             matchEl.id = `match-${matchData.id}`;
-            matchEl.innerHTML = createMatchSVG(matchData);
+            matchEl.innerHTML = createMatchSVG(matchData, isReadOnly);
             roundEl.appendChild(matchEl);
         });
         container.appendChild(roundEl);
     });
-    
     runLayoutAndDraw(targetSelector, roundsData);
 }
