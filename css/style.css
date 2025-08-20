@@ -202,7 +202,7 @@ textarea {
 .tournament-name { font-weight: 600; font-size: 1.2rem; color: #041A4A; display: block; margin-bottom: 0.25rem; }
 .tournament-details { font-size: 0.9rem; color: #777; }
 
-/* --- REGRAS PARA O LAYOUT DA CLASSIFICAÇÃO --- */
+/* REGRAS PARA O LAYOUT DA CLASSIFICAÇÃO */
 .main-content {
     display: flex;
     gap: 2rem;
@@ -214,16 +214,17 @@ textarea {
 }
 
 #ranking-column {
-    width: 320px;
+    width: 360px; /* Largura ajustada */
     flex-shrink: 0;
     background-color: #fff;
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0,0,0,0.05);
-    padding: 0; /* Removido para o h2 controlar o espaçamento */
+    padding: 0;
 }
 
 #ranking-column h2 {
     margin-bottom: 1rem;
+    padding: 20px;
     padding-bottom: 1rem;
     border-bottom: 1px solid #eee;
 }
@@ -253,7 +254,6 @@ textarea {
     font-weight: bold;
     color: #041A4A;
     text-align: center;
-    width: 1%;
 }
 
 #ranking-table tr:last-child td {
