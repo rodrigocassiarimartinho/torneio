@@ -143,6 +143,7 @@ function main() {
         adminListContainer.addEventListener('click', (event) => {
             if (event.target.classList.contains('delete-link')) {
                 const tournamentId = event.target.dataset.id;
+                // Pega o nome do torneio para uma mensagem de confirmação mais amigável
                 const tournamentName = event.target.closest('.admin-list-item').querySelector('.tournament-name').textContent;
                 deleteTournament(tournamentId, tournamentName);
             }
