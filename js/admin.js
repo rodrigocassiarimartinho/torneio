@@ -1,4 +1,4 @@
-// js/admin.js - Versão com redirecionamento para o modo de edição
+// js/admin.js - Lógica exclusiva para a página de administração (admin.html)
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -56,7 +56,6 @@ async function createNewTournament() {
         if (!response.ok) throw new Error(result.message);
 
         alert(`Tournament "${name}" created successfully!`);
-        // --- MUDANÇA AQUI ---
         // Redireciona para a URL de visualização COM o modo de edição ativado
         window.location.href = `index.html?id=${result.id}&edit=true`;
 
