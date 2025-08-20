@@ -1,4 +1,4 @@
-// js/results.js - Versão com a correção final do avanço do Bye
+// js/results.js - Versão com _advancePlayer e _processMatchResult atualizados
 
 let currentTournamentData = {};
 let undoHistory = [];
@@ -49,9 +49,24 @@ function _determineWinner(match) {
 }
 
 function _advancePlayer(player, placeholder, data) {
-    const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket, data.grandFinal];
     const playerData = { ...player };
     delete playerData.score;
+
+    // Se o placeholder começa com 'RANK:', é uma classificação
+    if (placeholder && placeholder.startsWith('RANK:')) {
+        const placement = placeholder.substring(5); // Pega o texto "3rd Place", etc.
+        if (!data.ranking) data.ranking = {};
+        if (!data.ranking[placement]) data.ranking[placement] = [];
+
+        // Adiciona o jogador se ele ainda não estiver lá
+        if (!data.ranking[placement].some(p => p.name === playerData.name)) {
+            data.ranking[placement].push(playerData);
+        }
+        return;
+    }
+
+    // Lógica original para avançar para a próxima partida
+    const allBrackets = data.type === 'single' ? [data.rounds] : [data.winnersBracket, data.losersBracket, data.grandFinal];
     for (const bracket of (allBrackets || [])) {
         for (const round of (bracket || [])) {
             for (const match of (round || [])) {
@@ -69,29 +84,29 @@ function _advancePlayer(player, placeholder, data) {
 }
 
 function _processMatchResult(data, match, bracketName) {
-    const { winner, loser } = _determineWinner(match);
-    if (winner) {
-        // --- INÍCIO DA CORREÇÃO ---
-        // A condição para avançar o perdedor não deve filtrar os Byes.
-        // O Bye é um perdedor virtual e precisa avançar para a estrutura funcionar.
-        const shouldAdvanceLoser = data.type === 'double' && bracketName === 'winnersBracket' && loser;
-        // --- FIM DA CORREÇÃO ---
+    // Para a caixa do campeão, o "vencedor" é apenas o jogador p1
+    if (match.isChampionBox) {
+        if (match.p1 && !match.p1.isPlaceholder) {
+            _advancePlayer(match.p1, match.winnerDestination, data);
+            match.isProcessed = true;
+            return true;
+        }
+        return false;
+    }
 
-        if (bracketName === 'grandFinal' && match.id === data.grandFinal[0][0].id) { 
-            const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
-            if (winnerIsFromWinnersBracket) {
-                const championBox = data.grandFinal[2][0];
-                _advancePlayer(winner, championBox.p1.name, data);
-            } else {
-                _advancePlayer(winner, `Winner of M${match.id}`, data);
-                _advancePlayer(loser, `Loser of M${match.id}`, data);
-            }
-        } else {
-            _advancePlayer(winner, `Winner of M${match.id}`, data);
-            if (shouldAdvanceLoser) {
-                _advancePlayer(loser, `Loser of M${match.id}`, data);
+    const { winner, loser } = _determineWinner(match);
+
+    if (winner) {
+        const winnerDestination = match.winnerDestination || `Winner of M${match.id}`;
+        _advancePlayer(winner, winnerDestination, data);
+       
+        if (loser && !loser.isBye) {
+            const loserDestination = match.loserDestination || (data.type === 'double' && bracketName === 'winnersBracket' ? `Loser of M${match.id}` : null);
+            if(loserDestination) {
+                _advancePlayer(loser, loserDestination, data);
             }
         }
+        
         match.isProcessed = true;
         return true;
     }
@@ -99,6 +114,7 @@ function _processMatchResult(data, match, bracketName) {
 }
 
 function _stabilizeBracket(data) {
+    if (!data || !data.type) return {}; // Retorna objeto vazio se não houver dados
     let dataCopy = JSON.parse(JSON.stringify(data));
     let changesMade;
     do {
@@ -110,7 +126,6 @@ function _stabilizeBracket(data) {
             { name: 'rounds', data: dataCopy.rounds }
         ];
 
-        // Fase 1: Atribui placares automáticos
         for (const bracketInfo of allBracketsInfo) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
@@ -121,23 +136,13 @@ function _stabilizeBracket(data) {
                     const p1_exists = match.p1 && !match.p1.isBye && !match.p1.isPlaceholder;
                     const p2_exists = match.p2 && !match.p2.isBye && !match.p2.isPlaceholder;
 
-                    if (p1_exists && p2_isBye) { 
-                        match.p2.score = 'WO'; 
-                        changesMade = true;
-                    } 
-                    else if (p2_exists && p1_isBye) { 
-                        match.p1.score = 'WO'; 
-                        changesMade = true;
-                    }
-                    else if (p1_isBye && p2_isBye) {
-                        match.p2.score = 'WO';
-                        changesMade = true;
-                    }
+                    if (p1_exists && p2_isBye) { match.p2.score = 'WO'; changesMade = true; } 
+                    else if (p2_exists && p1_isBye) { match.p1.score = 'WO'; changesMade = true; }
+                    else if (p1_isBye && p2_isBye) { match.p2.score = 'WO'; changesMade = true; }
                 }
             }
         }
 
-        // Fase 2: Processa os resultados
         for (const bracketInfo of allBracketsInfo) {
             for (const round of (bracketInfo.data || [])) {
                 for (const match of (round || [])) {
@@ -150,8 +155,6 @@ function _stabilizeBracket(data) {
     } while (changesMade);
     return dataCopy;
 }
-
-// --- FUNÇÕES "PÚBLICAS" EXPORTADAS ---
 
 export function initializeBracket(populatedBracket) {
     undoHistory = [];
