@@ -1,4 +1,4 @@
-// js/admin.js - Lógica exclusiva para a página de administração (admin.html)
+// js/admin.js - Versão com redirecionamento para o modo de edição
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -9,11 +9,7 @@ import * as tournamentEngine from './results.js';
 
 const API_URL = 'api/api.php';
 
-/**
- * Coleta os dados do formulário, cria uma nova chave e a salva via API.
- */
 async function createNewTournament() {
-    // 1. Coleta todos os dados do formulário de admin
     const name = document.getElementById('tournament-name').value.trim();
     const date = document.getElementById('tournament-date').value;
     const playerInput = document.getElementById('player-list').value;
@@ -24,7 +20,6 @@ async function createNewTournament() {
         return;
     }
     
-    // 2. Gera a estrutura da chave
     const { unseededPlayers, seededPlayers } = parsePlayerInput(playerInput);
     const playerCount = unseededPlayers.length + seededPlayers.length;
     if (playerCount < 2) {
@@ -41,11 +36,9 @@ async function createNewTournament() {
         populatedBracket = populateDoubleBracket(structure, playerInput);
     }
     
-    // 3. Pede ao motor para processar e estabilizar a chave
     tournamentEngine.initializeBracket(populatedBracket);
     const finalBracketData = tournamentEngine.getCurrentData();
 
-    // 4. Prepara os dados para enviar à API
     const payload = {
         name: name,
         date: date,
@@ -53,7 +46,6 @@ async function createNewTournament() {
         bracket_data: finalBracketData
     };
 
-    // 5. Envia o novo torneio para a API para ser salvo
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -63,9 +55,10 @@ async function createNewTournament() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
 
-        alert(`Tournament "${name}" created successfully! Redirecting to the bracket page.`);
-        // 6. Se tudo deu certo, redireciona o admin para a página pública da nova chave
-        window.location.href = `index.html?id=${result.id}`;
+        alert(`Tournament "${name}" created successfully!`);
+        // --- MUDANÇA AQUI ---
+        // Redireciona para a URL de visualização COM o modo de edição ativado
+        window.location.href = `index.html?id=${result.id}&edit=true`;
 
     } catch (error) {
         console.error('Error creating tournament:', error);
@@ -73,5 +66,4 @@ async function createNewTournament() {
     }
 }
 
-// Adiciona o listener de evento apenas ao botão da página de admin
 document.getElementById('generate-btn').addEventListener('click', createNewTournament);
