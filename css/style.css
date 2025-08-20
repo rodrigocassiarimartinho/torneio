@@ -3,7 +3,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f2f5;
     margin: 0;
-   padding: 90px 2rem 2rem 2rem; /* Ajuste o primeiro valor (padding-top) */
+   padding: 120px 2rem 2rem 2rem; /* Ajuste o primeiro valor (padding-top) */
    box-sizing: border-box;}
 
 h1, h2 {
