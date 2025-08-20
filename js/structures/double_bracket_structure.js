@@ -1,18 +1,10 @@
 // js/structures/double_bracket_structure.js
-// Versão com a lógica de ranking do campeão e formatação de rótulos corrigida.
+// Versão com placeholder do campeão aprimorado.
 
 import * as TMath from '../math.js';
 
-/**
- * Formata um rótulo de colocação para o formato "5º to 6º".
- * @param {number} start O início da faixa de colocação.
- * @param {number} count O número de jogadores nessa faixa.
- * @returns {string} O rótulo formatado.
- */
 function formatPlacement(start, count) {
-    if (count === 1) {
-        return `${start}º`;
-    }
+    if (count === 1) return `${start}º`;
     const end = start + count - 1;
     return `${start}º to ${end}º`;
 }
@@ -81,43 +73,43 @@ export function buildDoubleBracketStructure(n_original) {
     ranking['1º'] = [];
     ranking['2º'] = [];
     let currentPlacement = 3;
-
     for (let r = losersBracket.length - 1; r >= 0; r--) {
         const round = losersBracket[r];
         const playersInTier = round.length;
         if (playersInTier === 0) continue;
-
         const placementLabel = formatPlacement(currentPlacement, playersInTier);
-        
         ranking[placementLabel] = [];
-        round.forEach(match => {
-            match.loserDestination = `RANK:${placementLabel}`;
-        });
+        round.forEach(match => { match.loserDestination = `RANK:${placementLabel}`; });
         currentPlacement += playersInTier;
     }
     
     if (bracketSize >= 2) {
         const wbFinalWinner = { name: `Winner of M${winnersBracket[numWinnersRounds-1][0].id}`, isPlaceholder: true };
         const lbFinalWinner = losersBracket.length > 0 ? { name: `Winner of M${losersBracket[numLosersRounds-1][0].id}`, isPlaceholder: true } : {name: 'TBD'};
-        
         const finalMatch1 = { id: matchIdCounter++, p1: wbFinalWinner, p2: lbFinalWinner };
         
         if (losersBracket.length === 0) {
-            finalMatch1.winnerDestination = `RANK:1º`;
+            finalMatch1.winnerDestination = `Tournament Champion`;
             finalMatch1.loserDestination = `RANK:2º`;
             grandFinal.push([finalMatch1]);
         } else {
             const finalMatch2 = { id: matchIdCounter++, p1: { name: `Winner of M${finalMatch1.id}`, isPlaceholder: true }, p2: { name: `Loser of M${finalMatch1.id}`, isPlaceholder: true } };
-            const championBox = { id: matchIdCounter++, isChampionBox: true, p1: { name: `Winner of M${finalMatch1.id}`, isPlaceholder: true }, winnerDestination: `RANK:1º` };
-
             finalMatch1.winnerDestination = `Winner of M${finalMatch1.id}`;
             finalMatch1.loserDestination = `RANK:2º`;
-            
-            finalMatch2.winnerDestination = `RANK:1º`;
+            finalMatch2.winnerDestination = `Tournament Champion`;
             finalMatch2.loserDestination = `RANK:2º`;
-            
-            grandFinal.push([finalMatch1], [finalMatch2], [championBox]);
+            grandFinal.push([finalMatch1], [finalMatch2]);
         }
+    }
+    
+    // A caixa do campeão agora é um item separado e final
+    const championBox = { id: matchIdCounter++, isChampionBox: true, p1: { name: 'Tournament Champion', isPlaceholder: true }, winnerDestination: `RANK:1º` };
+    if (grandFinal.length > 0) {
+        grandFinal.push([championBox]);
+    } else if (winnersBracket.length > 0) {
+        // Para chaves muito pequenas sem final
+        winnersBracket[winnersBracket.length-1][0].winnerDestination = 'Tournament Champion';
+        winnersBracket.push([championBox]);
     }
     
     return { type: 'double', winnersBracket, losersBracket, grandFinal, ranking };
