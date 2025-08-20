@@ -1,6 +1,6 @@
-// js/main.js - Versão com a correção final do erro de sintaxe
+// js/main.js - Lógica final completa
 
-import { renderBracket } from './bracket_render.js';
+import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
 import * as tournamentEngine from './results.js';
 
@@ -8,18 +8,12 @@ const API_URL = 'api/api.php';
 let currentTournamentId = null;
 let isEditMode = false;
 
-/**
- * Atualiza o estado (habilitado/desabilitado) dos botões Undo/Redo.
- */
 function updateButtonStates() {
     const { canUndo, canRedo } = tournamentEngine.getHistoryState();
     document.getElementById('undo-btn').disabled = !canUndo;
     document.getElementById('redo-btn').disabled = !canRedo;
 }
 
-/**
- * Salva o estado atual do torneio no servidor.
- */
 async function saveCurrentTournamentState() {
     const currentData = tournamentEngine.getCurrentData();
     if (!currentData.type || !currentTournamentId) return;
@@ -46,9 +40,6 @@ async function saveCurrentTournamentState() {
     }
 }
 
-/**
- * Busca a lista de todos os torneios na API e os exibe na página.
- */
 async function loadTournamentList() {
     const listContainer = document.getElementById('tournament-list');
     const appContainer = document.getElementById('app-container');
@@ -92,9 +83,6 @@ async function loadTournamentList() {
     }
 }
 
-/**
- * Carrega e exibe uma chave de torneio específica, ajustando a UI para o modo correto.
- */
 async function loadAndDisplayBracket(id) {
     document.getElementById('tournament-list-container').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
@@ -131,9 +119,6 @@ async function loadAndDisplayBracket(id) {
     }
 }
 
-/**
- * Função central de renderização.
- */
 function fullRender() {
     const currentData = tournamentEngine.getCurrentData();
     if (!currentData.type) return;
@@ -155,14 +140,14 @@ function fullRender() {
         renderBracket(currentData.rounds, '#winners-bracket-matches', isReadOnly);
     }
 
+    // Chama a nova função para renderizar a tabela de classificação
+    renderRanking(currentData.ranking, '#ranking-table');
+
     if (isEditMode) {
         updateButtonStates();
     }
 }
 
-/**
- * Ações de histórico que salvam o estado após a execução.
- */
 function undoAction() {
     tournamentEngine.undo();
     fullRender();
@@ -183,7 +168,6 @@ function backToAction() {
     }
 }
 
-// --- Lógica de Inicialização da Página Pública ---
 document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const tournamentId = params.get('id');
@@ -205,7 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
 
     } else {
-        // Se não há ID, estamos na página de listagem, então escondemos o container do app.
         const appContainer = document.getElementById('app-container');
         if (appContainer) {
             appContainer.style.display = 'none';
