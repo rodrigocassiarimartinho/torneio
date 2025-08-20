@@ -1,4 +1,4 @@
-// js/results.js - Versão com a lógica da Grande Final corrigida
+// js/results.js - Versão com a lógica da Grande Final totalmente corrigida
 
 let currentTournamentData = {};
 let undoHistory = [];
@@ -93,30 +93,25 @@ function _processMatchResult(data, match, bracketName) {
 
     if (winner) {
         // --- INÍCIO DA CORREÇÃO DA LÓGICA DA GRANDE FINAL ---
-        if (bracketName === 'grandFinal') {
+        if (bracketName === 'grandFinal' && data.grandFinal && data.grandFinal.length > 1) {
             const finalMatch1 = data.grandFinal[0][0];
-            const finalMatch2 = data.grandFinal[1][0];
+            const finalMatch2 = data.grandFinal[1] ? data.grandFinal[1][0] : null;
 
-            if (match.id === finalMatch1.id) { // É a primeira partida da final
-                const winnerIsFromWinnersBracket = (winner.name === match.p1.name); // Assumindo que P1 é sempre o da WB
-                
+            if (match.id === finalMatch1.id) {
+                const winnerIsFromWinnersBracket = (winner.name === match.p1.name);
                 if (winnerIsFromWinnersBracket) {
-                    // Cenário A: Vencedor da WB ganha, torneio acaba.
-                    _advancePlayer(winner, "RANK:1º");
-                    _advancePlayer(loser, "RANK:2º");
-                    // Deixa a segunda final vazia (placeholders não serão preenchidos)
+                    _advancePlayer(winner, 'Tournament Champion', data);
+                    if (loser) _advancePlayer(loser, 'RANK:2º', data);
                 } else {
-                    // Cenário B: Vencedor da LB ganha, força a segunda final (bracket reset).
                     _advancePlayer(winner, `Winner of M${match.id}`, data);
                     _advancePlayer(loser, `Loser of M${match.id}`, data);
                 }
-            } else if (match.id === finalMatch2.id) { // É a segunda partida da final
-                // O resultado aqui é definitivo.
-                _advancePlayer(winner, `RANK:1º`, data);
-                _advancePlayer(loser, `RANK:2º`, data);
+            } else if (finalMatch2 && match.id === finalMatch2.id) {
+                _advancePlayer(winner, 'Tournament Champion', data);
+                if (loser) _advancePlayer(loser, 'RANK:2º', data);
             }
         } else {
-            // Lógica para todas as outras partidas (não-finais)
+            // Lógica para todas as outras partidas
             const winnerDestination = match.winnerDestination || `Winner of M${match.id}`;
             _advancePlayer(winner, winnerDestination, data);
        
