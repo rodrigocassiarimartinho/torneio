@@ -1,4 +1,4 @@
-// js/main.js - Lógica completa para a página pública (index.html)
+// js/main.js - Versão com a correção final do erro de sintaxe
 
 import { renderBracket } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
@@ -99,11 +99,9 @@ async function loadAndDisplayBracket(id) {
     document.getElementById('tournament-list-container').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
 
-    // Gerencia a visibilidade dos botões de admin com base na flag isEditMode
     const adminControls = document.querySelector('.header-buttons-left');
     adminControls.style.display = isEditMode ? 'flex' : 'none';
 
-    // Ajusta o botão "Voltar"
     const backButton = document.getElementById('back-to-list-btn');
     if (isEditMode) {
         backButton.textContent = "Back to Admin";
@@ -172,16 +170,46 @@ function undoAction() {
 }
 
 function redoAction() {
-t-size: 0.9rem;
-    font-weight: 600;
-    color: #fff;
-    background-color: #28a745;
-    border: 2px solid #28a745;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+    tournamentEngine.redo();
+    fullRender();
+    saveCurrentTournamentState();
 }
-#save-btn:hover {
-    background-color: #218838;
-    border-color: #218838;
+
+function backToAction() {
+    if (isEditMode) {
+        window.location.href = 'admin.html';
+    } else {
+        window.location.href = 'index.html';
+    }
 }
+
+// --- Lógica de Inicialização da Página Pública ---
+document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const tournamentId = params.get('id');
+    isEditMode = params.get('edit') === 'true';
+
+    if (tournamentId) {
+        loadAndDisplayBracket(tournamentId);
+        
+        if (isEditMode) {
+            setupInteractivity(() => {
+                fullRender();
+                saveCurrentTournamentState();
+            });
+            document.getElementById('undo-btn').addEventListener('click', undoAction);
+            document.getElementById('redo-btn').addEventListener('click', redoAction);
+            document.getElementById('save-btn').addEventListener('click', saveCurrentTournamentState);
+        }
+        
+        document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
+
+    } else {
+        // Se não há ID, estamos na página de listagem, então escondemos o container do app.
+        const appContainer = document.getElementById('app-container');
+        if (appContainer) {
+            appContainer.style.display = 'none';
+        }
+        loadTournamentList();
+    }
+});
