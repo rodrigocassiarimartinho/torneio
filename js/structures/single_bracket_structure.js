@@ -6,13 +6,13 @@ import { getNextPowerOfTwo, getWinnersBracketRoundsCount, getWinnersRoundMatchCo
 
 export function buildSingleBracketStructure(n_original) {
     const bracketSize = getNextPowerOfTwo(n_original);
-    if (bracketSize < 2) return { rounds: [] };
+    if (bracketSize < 2) return { type: 'single', rounds: [], ranking: {} };
 
     let matchIdCounter = 1;
     const rounds = [];
     const ranking = {};
 
-    // 1. Constrói o esqueleto da chave
+    // 1. Constrói o esqueleto da chave com partidas vazias
     const numRounds = getWinnersBracketRoundsCount(bracketSize);
     for (let i = 1; i <= numRounds; i++) {
         const numMatches = getWinnersRoundMatchCount(i, bracketSize);
@@ -24,23 +24,28 @@ export function buildSingleBracketStructure(n_original) {
     ranking['1st Place'] = [];
     ranking['2nd Place'] = [];
 
+    // Itera pelas rodadas (exceto a final) para definir as colocações dos perdedores
     for (let r = numRounds - 2; r >= 0; r--) {
         const round = rounds[r];
-        const losersPlacement = (round.length * 2) + 1;
+        // A colocação de um perdedor é o número de times que avançam + 1
+        const losersPlacement = (bracketSize / Math.pow(2, r+1)) * 2 + 1;
         
-        let placementLabel = `${losersPlacement}th Place`;
+        let placementLabel;
         if (round.length > 1) { // Mais de um perdedor, então é um empate
             const lastPlaceInTier = losersPlacement + round.length - 1;
             placementLabel = `${losersPlacement}th-${lastPlaceInTier}th Place`;
+        } else { // Apenas um perdedor (ex: disputa de 3º lugar, se existisse)
+             placementLabel = `${losersPlacement}rd Place`;
         }
         
+        // Cria a entrada no objeto de ranking e atribui o placeholder de destino
         ranking[placementLabel] = [];
         round.forEach(match => {
             match.loserDestination = `RANK:${placementLabel}`;
         });
     }
 
-    // 3. Preenche a chave com apontadores
+    // 3. Preenche a chave com apontadores de vencedores para as próximas rodadas
     for(let r=0; r < rounds.length - 1; r++) {
         const currentRound = rounds[r];
         const nextRound = rounds[r+1];
@@ -50,10 +55,19 @@ export function buildSingleBracketStructure(n_original) {
         });
     }
     
-    // 4. Atribui destinos para a final
+    // 4. Atribui destinos de classificação para o vencedor e perdedor da final
     const finalMatch = rounds[numRounds - 1][0];
     finalMatch.winnerDestination = `RANK:1st Place`;
     finalMatch.loserDestination = `RANK:2nd Place`;
+    
+    // O último elemento da chave é a caixa do campeão, que apenas recebe o vencedor
+    const championBox = { 
+        id: matchIdCounter++, 
+        isChampionBox: true, 
+        p1: { name: `Winner of M${finalMatch.id}`, isPlaceholder: true }, 
+        p2: null 
+    };
+    rounds.push([championBox]);
     
     return { type: 'single', rounds, ranking };
 }
