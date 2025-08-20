@@ -9,6 +9,9 @@ import * as tournamentEngine from './results.js';
 
 const API_URL = 'api/api.php';
 
+/**
+ * Coleta os dados do formulário, cria uma nova chave e a salva via API.
+ */
 async function createNewTournament() {
     // 1. Coleta todos os dados do formulário de admin
     const name = document.getElementById('tournament-name').value.trim();
@@ -60,8 +63,8 @@ async function createNewTournament() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
 
+        alert(`Tournament "${name}" created successfully! Redirecting to the bracket page.`);
         // 6. Se tudo deu certo, redireciona o admin para a página pública da nova chave
-        alert(`Tournament "${name}" created successfully!`);
         window.location.href = `index.html?id=${result.id}`;
 
     } catch (error) {
