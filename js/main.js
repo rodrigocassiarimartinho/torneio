@@ -1,4 +1,4 @@
-// js/main.js - Lógica final completa
+// js/main.js - Versão adaptada para salvar e carregar a sessão completa
 
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
@@ -15,15 +15,15 @@ function updateButtonStates() {
 }
 
 async function saveCurrentTournamentState() {
-    const currentData = tournamentEngine.getCurrentData();
-    if (!currentData.type || !currentTournamentId) return;
+    const currentSession = tournamentEngine.getCurrentSessionState();
+    if (!currentSession.currentState || !currentSession.currentState.type || !currentTournamentId) return;
 
     const payload = {
         public_id: currentTournamentId,
-        bracket_data: currentData,
+        bracket_data: currentSession,
         name: document.querySelector('#app-container h1').textContent,
-        date: currentData.tournament_date || new Date().toISOString().slice(0, 10),
-        type: currentData.type
+        date: currentSession.currentState.tournament_date || new Date().toISOString().slice(0, 10),
+        type: currentSession.currentState.type
     };
 
     try {
@@ -103,10 +103,9 @@ async function loadAndDisplayBracket(id) {
         
         const tournamentDataFromServer = await response.json();
         
-        const bracketData = tournamentDataFromServer.bracket_data;
-        bracketData.tournament_date = tournamentDataFromServer.tournament_date;
+        const sessionData = tournamentDataFromServer.bracket_data;
         
-        tournamentEngine.initializeBracket(bracketData);
+        tournamentEngine.initializeBracket(sessionData);
         currentTournamentId = id;
         
         document.querySelector('#app-container h1').textContent = tournamentDataFromServer.name;
@@ -120,8 +119,9 @@ async function loadAndDisplayBracket(id) {
 }
 
 function fullRender() {
-    const currentData = tournamentEngine.getCurrentData();
-    if (!currentData.type) return;
+    const currentSession = tournamentEngine.getCurrentSessionState();
+    const currentData = currentSession.currentState;
+    if (!currentData || !currentData.type) return;
 
     const isReadOnly = !isEditMode;
     const mainBracketTitle = document.getElementById('main-bracket-title');
@@ -140,9 +140,7 @@ function fullRender() {
         renderBracket(currentData.rounds, '#winners-bracket-matches', isReadOnly);
     }
 
-    // Chama a nova função para renderizar a tabela de classificação
     renderRanking(currentData.ranking, '#ranking-table');
-
     if (isEditMode) {
         updateButtonStates();
     }
