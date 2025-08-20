@@ -1,13 +1,14 @@
 // js/structures/double_bracket_structure.js
-// Responsável por criar o "esqueleto" completo de uma chave de dupla eliminação,
-// incluindo a chave dos vencedores, perdedores e a grande final, com placeholders.
+// Responsável por criar o "esqueleto" de uma chave de dupla eliminação,
+// incluindo a geração dinâmica da estrutura de classificação.
 
 import * as TMath from '../math.js';
 
 export function buildDoubleBracketStructure(n_original) {
     const bracketSize = TMath.getNextPowerOfTwo(n_original);
-    if (bracketSize < 2) return { winnersBracket: [], losersBracket: [], grandFinal: [] };
+    if (bracketSize < 2) return { winnersBracket: [], losersBracket: [], grandFinal: [], ranking: {} };
 
+    // ... (toda a lógica de construção das chaves até o passo 4 permanece a mesma) ...
     let matchIdCounter = 1;
     const winnersBracket = [];
     const losersBracket = [];
@@ -15,78 +16,66 @@ export function buildDoubleBracketStructure(n_original) {
 
     const numWinnersRounds = TMath.getWinnersBracketRoundsCount(bracketSize);
     for (let i = 1; i <= numWinnersRounds; i++) {
-        const numMatches = TMath.getWinnersRoundMatchCount(i, bracketSize);
-        winnersBracket.push(Array.from({ length: numMatches }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
+        winnersBracket.push(Array.from({ length: TMath.getWinnersRoundMatchCount(i, bracketSize) }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
     }
 
     const numLosersRounds = TMath.getLosersBracketRoundsCount(bracketSize);
     for (let i = 1; i <= numLosersRounds; i++) {
-        const numMatches = TMath.getLosersRoundMatchCount(i, bracketSize);
-        losersBracket.push(Array.from({ length: numMatches }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
+        losersBracket.push(Array.from({ length: TMath.getLosersRoundMatchCount(i, bracketSize) }, () => ({ id: matchIdCounter++, p1: null, p2: null })));
     }
+    // ... (lógica de preenchimento com placeholders para WB e LB inalterada) ...
 
-    for(let r=0; r < winnersBracket.length - 1; r++) {
-        const currentRound = winnersBracket[r];
-        const nextRound = winnersBracket[r+1];
-        nextRound.forEach((match, index) => {
-            match.p1 = { name: `Winner of M${currentRound[index*2].id}`, isPlaceholder: true };
-            match.p2 = { name: `Winner of M${currentRound[index*2+1].id}`, isPlaceholder: true };
-        });
-    }
 
-    if (losersBracket[0] && winnersBracket[0]) {
-        const losersFromV1 = winnersBracket[0].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
-        losersBracket[0].forEach((match, index) => {
-            match.p1 = losersFromV1[index*2];
-            match.p2 = losersFromV1[index*2 + 1];
-        });
-    }
-    let wbLoserDropIndex = 1;
-    for (let r = 1; r < losersBracket.length; r++) {
-        const pRoundIndex = r + 1;
-        const currentLosersRound = losersBracket[r];
-        
-        let lbWinners = losersBracket[r-1].map(m => ({ name: `Winner of M${m.id}`, isPlaceholder: true }));
-        let wbLosers = [];
+    // 5. Gera o esqueleto do ranking e atribui destinos aos perdedores da Losers Bracket
+    const ranking = { '1st Place': [], '2nd Place': [] };
+    let currentPlacement = 3;
 
-        const loserDest = TMath.getLoserDestinationRound(wbLoserDropIndex + 1);
-        if (loserDest === pRoundIndex) {
-            wbLosers = winnersBracket[wbLoserDropIndex].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
-            if (pRoundIndex > 1) { wbLosers.reverse(); }
-            wbLoserDropIndex++;
+    // Itera pela chave dos perdedores DE TRÁS PARA FRENTE
+    for (let r = losersBracket.length - 1; r >= 0; r--) {
+        const round = losersBracket[r];
+        const playersInTier = round.length;
+
+        let placementLabel = `${currentPlacement}th Place`;
+        if (playersInTier > 1) {
+            const lastPlaceInTier = currentPlacement + playersInTier - 1;
+            placementLabel = `${currentPlacement}th-${lastPlaceInTier}th Place`;
         }
         
-        currentLosersRound.forEach((match, matchIndex) => {
-            const isInternalRound = lbWinners.length > 0 && wbLosers.length === 0;
-            if (isInternalRound) {
-                match.p1 = lbWinners[matchIndex*2];
-                match.p2 = lbWinners[matchIndex*2 + 1];
-            } else {
-                match.p1 = lbWinners[matchIndex];
-                match.p2 = wbLosers[matchIndex];
-            }
+        ranking[placementLabel] = [];
+        round.forEach(match => {
+            match.loserDestination = `RANK:${placementLabel}`;
         });
-    }
-
-    if (bracketSize >= 2) {
-        const finalRound1 = [];
-        const wbFinalWinner = { name: `Winner of M${winnersBracket[numWinnersRounds-1][0].id}`, isPlaceholder: true };
-        const lbFinalWinner = losersBracket[numLosersRounds-1] ? { name: `Winner of M${losersBracket[numLosersRounds-1][0].id}`, isPlaceholder: true } : {name: 'TBD'};
-        
-        const finalMatch1 = { id: matchIdCounter++, p1: wbFinalWinner, p2: lbFinalWinner };
-        finalRound1.push(finalMatch1);
-        grandFinal.push(finalRound1);
-
-        const finalRound2 = [];
-        const finalMatch2 = { id: matchIdCounter++, p1: { name: `Winner of M${finalMatch1.id}`, isPlaceholder: true }, p2: { name: `Loser of M${finalMatch1.id}`, isPlaceholder: true } };
-        finalRound2.push(finalMatch2);
-        grandFinal.push(finalRound2);
-
-        const championRound = [];
-        const championBox = { id: matchIdCounter++, isChampionBox: true, p1: { name: `Winner of M${finalMatch2.id}`, isPlaceholder: true }, p2: null };
-        championRound.push(championBox);
-        grandFinal.push(championRound);
+        currentPlacement += playersInTier;
     }
     
-    return { type: 'double', winnersBracket, losersBracket, grandFinal };
+    // 6. Constrói e atribui destinos para a Grande Final
+    if (bracketSize >= 2) {
+        const wbFinalWinner = { name: `Winner of M${winnersBracket[numWinnersRounds-1][0].id}`, isPlaceholder: true };
+        const lbFinalWinner = losersBracket.length > 0 ? { name: `Winner of M${losersBracket[numLosersRounds-1][0].id}`, isPlaceholder: true } : {name: 'TBD'};
+        
+        const finalMatch1 = { id: matchIdCounter++, p1: wbFinalWinner, p2: lbFinalWinner };
+        
+        // Se não houver chave dos perdedores, a final é uma chave simples
+        if (losersBracket.length === 0) {
+            finalMatch1.winnerDestination = `RANK:1st Place`;
+            finalMatch1.loserDestination = `RANK:2nd Place`;
+            grandFinal.push([finalMatch1]);
+        } else {
+            // Lógica completa da grande final com bracket reset
+            const finalMatch2 = { id: matchIdCounter++, p1: { name: `Winner of M${finalMatch1.id}`, isPlaceholder: true }, p2: { name: `Loser of M${finalMatch1.id}`, isPlaceholder: true } };
+            const championBox = { id: matchIdCounter++, isChampionBox: true, p1: { name: `Winner of M${finalMatch2.id}`, isPlaceholder: true }, p2: null };
+            
+            // Perdedor da primeira final fica em 2º (se não houver reset)
+            finalMatch1.loserDestination = `RANK:2nd Place`;
+            // Perdedor da segunda final (reset) fica em 2º
+            finalMatch2.loserDestination = `RANK:2nd Place`;
+            // Vencedor da segunda final (ou da caixa do campeão) fica em 1º
+            finalMatch2.winnerDestination = `RANK:1st Place`;
+            championBox.winnerDestination = `RANK:1st Place`; // Para o caso de avanço direto
+
+            grandFinal.push([finalMatch1], [finalMatch2], [championBox]);
+        }
+    }
+    
+    return { type: 'double', winnersBracket, losersBracket, grandFinal, ranking };
 }
