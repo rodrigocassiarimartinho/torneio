@@ -1,18 +1,10 @@
 // js/structures/single_bracket_structure.js
-// Versão com a lógica de ranking dinâmico e exportação corrigida.
+// Versão com a lógica de ranking dinâmico e placeholder do campeão aprimorado.
 
 import { getNextPowerOfTwo, getWinnersBracketRoundsCount, getWinnersRoundMatchCount } from '../math.js';
 
-/**
- * Formata um rótulo de colocação para o formato "5º to 6º".
- * @param {number} start O início da faixa de colocação.
- * @param {number} count O número de jogadores nessa faixa.
- * @returns {string} O rótulo formatado.
- */
 function formatPlacement(start, count) {
-    if (count === 1) {
-        return `${start}º`;
-    }
+    if (count === 1) return `${start}º`;
     const end = start + count - 1;
     return `${start}º to ${end}º`;
 }
@@ -38,10 +30,8 @@ export function buildSingleBracketStructure(n_original) {
     for (let r = numRounds - 2; r >= 0; r--) {
         const round = rounds[r];
         const losersInThisRound = round.length;
-        // Calcula a posição inicial dos perdedores desta rodada
         const previousLosers = bracketSize / Math.pow(2, r + 1);
         const losersPlacement = previousLosers + 1;
-
         const placementLabel = formatPlacement(losersPlacement, losersInThisRound);
         
         ranking[placementLabel] = [];
@@ -60,13 +50,13 @@ export function buildSingleBracketStructure(n_original) {
     }
     
     const finalMatch = rounds[numRounds - 1][0];
-    finalMatch.winnerDestination = `RANK:1º`;
+    finalMatch.winnerDestination = 'Tournament Champion'; // Aponta para o placeholder estático
     finalMatch.loserDestination = `RANK:2º`;
     
     const championBox = { 
         id: matchIdCounter++, 
         isChampionBox: true, 
-        p1: { name: `Winner of M${finalMatch.id}`, isPlaceholder: true }, 
+        p1: { name: 'Tournament Champion', isPlaceholder: true }, 
         p2: null,
         winnerDestination: `RANK:1º`
     };
