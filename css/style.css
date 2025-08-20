@@ -62,12 +62,18 @@ textarea {
 }
 
 .app-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 2rem;
-    margin-bottom: 2.5rem;
-    padding: 1rem 0;
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   gap: 2rem;
+   padding: 1rem 2rem; /* Adicione padding horizontal para acompanhar o body */
+   background-color: #f0f2f5; /* Garante um fundo para a barra fixa */
+   position: fixed;
+   top: 0;
+   left: 0;
+   width: 100%;
+   z-index: 100; /* Garante que fique acima do conteúdo rolável */
+   box-shadow: 0 2px 4px rgba(0,0,0,0.05); /* Adiciona uma sombra sutil */
 }
 
 .app-header h1 {
