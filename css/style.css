@@ -90,7 +90,7 @@ textarea {
     flex-shrink: 0;
 }
 
-#undo-btn, #redo-btn {
+#undo-btn, #redo-btn, #show-photos-btn {
     width: 40px;
     height: 40px;
     background-color: transparent;
@@ -104,15 +104,15 @@ textarea {
     background-position: center;
 }
 
-#undo-btn:hover, #redo-btn:hover {
+#undo-btn:hover, #redo-btn:hover, #show-photos-btn:hover {
     background-color: #041A4A;
 }
 
-#undo-btn:hover::after, #redo-btn:hover::after {
+#undo-btn:hover::after, #redo-btn:hover::after, #show-photos-btn:hover::after {
     filter: invert(1);
 }
 
-#undo-btn::after, #redo-btn::after {
+#undo-btn::after, #redo-btn::after, #show-photos-btn::after {
     content: '';
     position: absolute;
     top: 50%;
@@ -141,6 +141,11 @@ textarea {
 #redo-btn::after {
      -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M11.5 8C14.15 8 16.55 8.99 18.4 10.6L22 7V16H13L16.62 12.38C15.23 11.22 13.46 10.5 11.5 10.5C8.76 10.5 6.46 11.94 5.36 14.04L3.64 13.26C5.09 10.44 8.04 8.5 11.5 8Z'/%3E%3C/svg%3E") no-repeat center;
     mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M11.5 8C14.15 8 16.55 8.99 18.4 10.6L22 7V16H13L16.62 12.38C15.23 11.22 13.46 10.5 11.5 10.5C8.76 10.5 6.46 11.94 5.36 14.04L3.64 13.26C5.09 10.44 8.04 8.5 11.5 8Z'/%3E%3C/svg%3E") no-repeat center;
+}
+
+#show-photos-btn::after {
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E") no-repeat center;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23000000'%3E%3Cpath d='M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z'/%3E%3C/svg%3E") no-repeat center;
 }
 
 #back-to-list-btn {
@@ -214,7 +219,6 @@ textarea {
 .admin-links .edit-link { color: #007bff; }
 .admin-links .delete-link { color: #dc3545; background: none; border: none; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
 .admin-links .delete-link:hover { color: #a71d2a; }
-
 .main-content { display: flex; gap: 2rem; align-items: flex-start; }
 .brackets-column { flex-grow: 1; }
 #ranking-column { width: 360px; flex-shrink: 0; background-color: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.05); }
@@ -229,10 +233,64 @@ textarea {
 #ranking-table td:first-child { font-weight: 700; color: #041A4A; text-align: center; font-variant-numeric: tabular-nums; }
 #ranking-table td { font-size: 1rem; }
 #ranking-table td:nth-child(2) { font-weight: 500; }
-
 #admin-photo-manager { margin-top: 2.5rem; background-color: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.05); width: 100%; }
 .photo-upload-area { padding: 0 20px 20px 20px; }
 #photo-upload-form p { margin-top: 0; margin-bottom: 1rem; color: #333; }
 #photo-upload-form input[type="file"] { display: block; margin-bottom: 1rem; }
 #photo-upload-form button { padding: 10px 20px; font-size: 1rem; font-weight: bold; color: #fff; background-color: #007bff; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; }
 #photo-upload-form button:hover { background-color: #0056b3; }
+
+/* Estilos do Modal do Carrossel */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-content {
+    position: relative;
+    padding: 20px;
+    width: 90vw;
+    max-width: 1000px;
+    height: 90vh;
+}
+.modal-close-btn {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    width: 35px;
+    height: 35px;
+    background-color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.swiper-container {
+    width: 100%;
+    height: 100%;
+}
+.swiper-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+.swiper-slide img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 4px;
+}
