@@ -300,7 +300,8 @@ textarea {
 #admin-tournament-list th:nth-child(1) { width: 50%; } /* Nome */
 #admin-tournament-list th:nth-child(2) { width: 120px; } /* Data */
 #admin-tournament-list th:nth-child(3) { width: 120px; } /* Tipo */
-#admin-tournament-list th:nth-child(4) { width: 220px; text-align: right;} /* Ações */
+/* CORREÇÃO: Aumentei a largura da coluna de ações para evitar quebra de linha */
+#admin-tournament-list th:nth-child(4) { width: 240px; text-align: right;} /* Ações */
 
 #admin-tournament-list td {
     padding: 1rem 8px;
@@ -327,7 +328,8 @@ textarea {
     display: inline-block;
     transition: all 0.2s ease;
     margin-left: 5px;
-    min-width: 65px; /* Garante que todos os botões tenham a mesma largura mínima */
+    /* CORREÇÃO: Troquei min-width por width para forçar tamanho igual */
+    width: 70px; 
     text-align: center; /* Centraliza o texto dentro do botão */
 }
 .admin-btn-compact.view-btn {
