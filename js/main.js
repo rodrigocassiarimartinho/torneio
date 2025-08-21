@@ -1,4 +1,4 @@
-// js/main.js - Versão com upload múltiplo de arquivos e suporte a vídeo no carrossel
+// js/main.js - Versão com título e subtítulo dinâmicos
 
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
@@ -21,7 +21,7 @@ async function saveCurrentTournamentState() {
     const payload = {
         public_id: currentTournamentId,
         bracket_data: currentSession,
-        name: document.querySelector('#app-container h1').textContent,
+        name: document.getElementById('main-tournament-title').textContent,
         date: currentSession.currentState.tournament_date || new Date().toISOString().slice(0, 10),
         type: currentSession.currentState.type
     };
@@ -115,7 +115,15 @@ async function loadAndDisplayBracket(id) {
         tournamentEngine.initializeBracket(sessionData);
         currentTournamentId = id;
         
-        document.querySelector('#app-container h1').textContent = tournamentDataFromServer.name;
+        // --- INÍCIO DA MUDANÇA ---
+        // Preenche o título principal e o novo subtítulo
+        document.getElementById('main-tournament-title').textContent = tournamentDataFromServer.name;
+
+        const date = new Date(tournamentDataFromServer.tournament_date + 'T00:00:00');
+        const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+        const typeLabel = tournamentDataFromServer.type === 'single' ? 'Single Elimination' : 'Double Elimination';
+        document.getElementById('main-tournament-subtitle').textContent = `${formattedDate} • ${typeLabel}`;
+        // --- FIM DA MUDANÇA ---
         
         fullRender();
         loadTournamentPhotos(id);
@@ -143,17 +151,9 @@ async function loadTournamentPhotos(id) {
                 swiperWrapper.innerHTML = mediaFiles.map(fileName => {
                     const extension = fileName.split('.').pop().toLowerCase();
                     if (['mp4', 'webm', 'mov'].includes(extension)) {
-                        return `
-                            <div class="swiper-slide">
-                                <video src="uploads/${fileName}" controls></video>
-                            </div>
-                        `;
+                        return `<div class="swiper-slide"><video src="uploads/${fileName}" controls></video></div>`;
                     } else {
-                        return `
-                            <div class="swiper-slide">
-                                <img src="uploads/${fileName}" alt="Tournament Media">
-                            </div>
-                        `;
+                        return `<div class="swiper-slide"><img src="uploads/${fileName}" alt="Tournament Media"></div>`;
                     }
                 }).join('');
                 
