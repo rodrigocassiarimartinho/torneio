@@ -24,9 +24,20 @@
             </div>
             
             <div class="header-title-container">
-                <h1 id="main-tournament-title">Tournament Bracket</h1>
+                <div id="title-display-area">
+                    <h1 id="main-tournament-title">Tournament Bracket</h1>
+                    <span id="edit-title-icon" style="display: none;" title="Edit Name/Date">✏️</span>
+                </div>
                 <div id="main-tournament-subtitle"></div>
+
+                <div id="title-edit-area" style="display: none;">
+                    <input type="text" id="edit-name-input">
+                    <input type="date" id="edit-date-input">
+                    <button id="save-title-btn" title="Save Changes">✔️</button>
+                    <button id="cancel-title-btn" title="Cancel Edit">❌</button>
+                </div>
             </div>
+
             <div class="header-buttons-right">
                 <button id="show-photos-btn" title="View Media" style="display: none;"></button>
                 <button id="back-to-list-btn">Back to List</button>
