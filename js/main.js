@@ -34,8 +34,9 @@ async function saveCurrentTournamentState() {
         });
         if (!response.ok) throw new Error("Failed to save.");
         console.log("State saved for tournament:", currentTournamentId);
+        alert("Changes saved successfully!"); // Feedback para o admin
     } catch (error) {
-        console.error('Auto-save failed:', error);
+        console.error('Save failed:', error);
         alert("Failed to save changes to the server.");
     }
 }
@@ -159,27 +160,148 @@ function toggleTitleEdit(editing) {
 }
 
 async function loadTournamentPhotos(id) {
-    // ... (função inalterada)
+    const showPhotosBtn = document.getElementById('show-photos-btn');
+    try {
+        const response = await fetch(`${API_URL}?action=get_photos&id=${id}`);
+        const mediaFiles = await response.json();
+
+        if (mediaFiles.length > 0) {
+            showPhotosBtn.style.display = 'block';
+            
+            const photoModal = document.getElementById('photo-carousel-modal');
+            const closeModalBtn = photoModal.querySelector('.modal-close-btn');
+            const swiperWrapper = photoModal.querySelector('.swiper-wrapper');
+
+            showPhotosBtn.onclick = () => {
+                swiperWrapper.innerHTML = mediaFiles.map(fileName => {
+                    const extension = fileName.split('.').pop().toLowerCase();
+                    if (['mp4', 'webm', 'mov'].includes(extension)) {
+                        return `<div class="swiper-slide"><video src="uploads/${fileName}" controls></video></div>`;
+                    } else {
+                        return `<div class="swiper-slide"><img src="uploads/${fileName}" alt="Tournament Media"></div>`;
+                    }
+                }).join('');
+                
+                photoModal.style.display = 'flex';
+
+                new Swiper('.swiper-container', {
+                    loop: mediaFiles.length > 1,
+                    pagination: { el: '.swiper-pagination', clickable: true },
+                    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+                });
+            };
+
+            closeModalBtn.onclick = () => {
+                photoModal.style.display = 'none';
+                swiperWrapper.innerHTML = '';
+            };
+
+        } else {
+            showPhotosBtn.style.display = 'none';
+        }
+    } catch(error) {
+        console.error("Error loading media:", error);
+        showPhotosBtn.style.display = 'none';
+    }
 }
 
 function fullRender() {
-    // ... (função inalterada)
+    const currentSession = tournamentEngine.getCurrentSessionState();
+    const currentData = currentSession.currentState;
+    if (!currentData || !currentData.type) return;
+
+    const isReadOnly = !isEditMode;
+    const mainBracketTitle = document.getElementById('main-bracket-title');
+    
+    document.getElementById('losers-bracket-container').style.display = currentData.type === 'double' ? 'block' : 'none';
+    document.getElementById('grand-final-container').style.display = currentData.type === 'double' ? 'block' : 'none';
+
+    if (currentData.type === 'double') {
+        mainBracketTitle.style.display = 'block';
+        mainBracketTitle.textContent = 'Winners Bracket';
+        renderBracket(currentData.winnersBracket, '#winners-bracket-matches', isReadOnly);
+        renderBracket(currentData.losersBracket, '#losers-bracket-matches', isReadOnly);
+        renderBracket(currentData.grandFinal, '#final-bracket-matches', isReadOnly);
+    } else {
+        mainBracketTitle.style.display = 'none';
+        renderBracket(currentData.rounds, '#winners-bracket-matches', isReadOnly);
+    }
+
+    renderRanking(currentData.ranking, '#ranking-table');
+    if (isEditMode) {
+        updateButtonStates();
+    }
 }
 
 async function handlePhotoUpload(event) {
-    // ... (função inalterada)
+    event.preventDefault();
+    const form = event.target;
+    const photoInput = document.getElementById('photo-input');
+    const files = photoInput.files;
+
+    if (files.length === 0) {
+        alert("Please select files to upload.");
+        return;
+    }
+    if (!currentTournamentId) {
+        alert("Cannot upload: No active tournament ID.");
+        return;
+    }
+
+    const uploadPromises = [];
+    for (const file of files) {
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('public_id', currentTournamentId);
+
+        const uploadPromise = fetch(`${API_URL}?action=upload`, {
+            method: 'POST',
+            body: formData
+        }).then(response => response.json().then(data => ({ok: response.ok, data, fileName: file.name})));
+        
+        uploadPromises.push(uploadPromise);
+    }
+
+    try {
+        const results = await Promise.all(uploadPromises);
+        const successfulUploads = results.filter(r => r.ok).length;
+        const failedUploads = results.filter(r => !r.ok);
+
+        let summaryMessage = `${successfulUploads} of ${results.length} files uploaded successfully.`;
+        if (failedUploads.length > 0) {
+            summaryMessage += '\n\nFailed uploads:\n';
+            failedUploads.forEach(fail => {
+                summaryMessage += `- ${fail.fileName}: ${fail.data.message}\n`;
+            });
+        }
+        
+        alert(summaryMessage);
+        form.reset();
+        loadTournamentPhotos(currentTournamentId);
+    } catch (error) {
+        console.error("Error during batch upload:", error);
+        alert(`An unexpected error occurred during upload.`);
+    }
 }
 
 function undoAction() {
-    // ... (função inalterada)
+    tournamentEngine.undo();
+    fullRender();
+    saveCurrentTournamentState();
 }
 
 function redoAction() {
-    // ... (função inalterada)
+    tournamentEngine.redo();
+    fullRender();
+    saveCurrentTournamentState();
 }
 
 function backToAction() {
-    // ... (função inalterada)
+    if (isEditMode) {
+        window.location.href = 'admin.html';
+    } else {
+        window.location.href = 'index.html';
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -216,17 +338,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newDate = document.getElementById('edit-date-input').value;
                 
                 const currentSession = tournamentEngine.getCurrentSessionState();
+                const currentType = currentSession.currentState.type;
+                
+                // Atualiza a data na sessão para que seja salva corretamente
                 currentSession.currentState.tournament_date = newDate;
+                tournamentEngine.initializeBracket(currentSession);
                 
-                tournamentEngine.initializeBracket(currentSession); // Recarrega a sessão com a nova data
-                
-                updateTitleDisplay(newName, newDate, currentSession.currentState.type);
+                updateTitleDisplay(newName, newDate, currentType);
                 saveCurrentTournamentState(); 
                 toggleTitleEdit(false);
             });
         }
         
         document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
+
     } else {
         const appContainer = document.getElementById('app-container');
         if (appContainer) {
