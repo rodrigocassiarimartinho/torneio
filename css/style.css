@@ -77,34 +77,65 @@ textarea {
     box-sizing: border-box; 
 }
 
-/* --- INÍCIO DA MUDANÇA --- */
 .header-title-container {
     text-align: center;
     flex-grow: 1;
+    position: relative;
 }
 .header-title-container h1 {
     margin: 0;
-    font-size: 1.5rem; /* Um pouco maior para destaque */
+    font-size: 1.5rem;
 }
 #main-tournament-subtitle {
     font-size: 0.9rem;
     color: #6c757d;
     margin-top: 4px;
 }
-/* --- FIM DA MUDANÇA --- */
+
+#title-display-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+#edit-title-icon {
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+    user-select: none;
+}
+#edit-title-icon:hover {
+    transform: scale(1.2);
+}
+#title-edit-area {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}
+#title-edit-area input {
+    font-size: 1rem;
+    padding: 5px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+#title-edit-area button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.5rem;
+}
 
 .header-buttons-left, .header-buttons-right {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
-    /* Adicionado para garantir alinhamento com o título de duas linhas */
     min-width: 150px; 
 }
 .header-buttons-right {
     justify-content: flex-end;
 }
-
 
 #undo-btn, #redo-btn, #show-photos-btn {
     width: 40px;
@@ -246,9 +277,9 @@ textarea {
 #ranking-table thead { background-color: #f9fafb; }
 #ranking-table th { font-weight: 600; color: #6c757d; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
 #ranking-table tbody tr:hover { background-color: #f8f9fa; }
-#ranking-table td:first-child { font-weight: 700; color: #041A4A; text-align: center; font-variant-numeric: tabular-nums; }
 #ranking-table td { font-size: 1rem; }
-#ranking-table td:nth-child(2) { font-weight: 500; }
+#ranking-table td:first-child { font-weight: 700; color: #041A4A; text-align: center; font-variant-numeric: tabular-nums; }
+#ranking-table td:nth-child(2) { font-weight: 500; font-size: 1rem; }
 #admin-photo-manager { margin-top: 2.5rem; background-color: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.05); width: 100%; }
 .photo-upload-area { padding: 0 20px 20px 20px; }
 #photo-upload-form p { margin-top: 0; margin-bottom: 1rem; color: #333; }
