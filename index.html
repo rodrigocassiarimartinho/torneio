@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tournament Brackets</title>
-    
     <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
-
     <link rel="stylesheet" href="css/style.css">
     <script src="js/main.js" type="module" defer></script>
 </head>
@@ -26,7 +24,7 @@
             </div>
             <h1>Tournament Bracket</h1>
             <div class="header-buttons-right">
-                <button id="show-photos-btn" title="View Photos" style="display: none;"></button>
+                <button id="show-photos-btn" title="View Media" style="display: none;"></button>
                 <button id="back-to-list-btn">Back to List</button>
             </div>
         </header>
@@ -62,12 +60,12 @@
                 </div>
                 
                 <div id="admin-photo-manager" style="display: none;">
-                    <h2>Manage Photos</h2>
+                    <h2>Manage Media</h2>
                     <div class="photo-upload-area">
                         <form id="photo-upload-form">
-                            <p>Select a photo to add to this tournament's gallery.</p>
-                            <input type="file" name="photo" id="photo-input" accept="image/*">
-                            <button type="submit">Upload Photo</button>
+                            <p>Select photos or videos to add to this tournament's gallery.</p>
+                            <input type="file" name="media[]" id="photo-input" accept="image/*,video/mp4,video/webm,video/quicktime" multiple>
+                            <button type="submit">Upload Files</button>
                         </form>
                     </div>
                 </div>
@@ -84,8 +82,7 @@
         <div class="modal-content">
             <button class="modal-close-btn">&times;</button>
             <div class="swiper-container">
-                <div class="swiper-wrapper">
-                    </div>
+                <div class="swiper-wrapper"></div>
                 <div class="swiper-pagination"></div>
                 <div class="swiper-button-next"></div>
                 <div class="swiper-button-prev"></div>
@@ -94,6 +91,5 @@
     </div>
 
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
-
 </body>
 </html>
