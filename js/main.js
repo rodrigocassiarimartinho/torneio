@@ -1,14 +1,13 @@
-// js/main.js - Versão com a correção no envio de dados para a API
+// js/main.js - Versão com a correção no envio de dados e feedback visual
 
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
 import * as tournamentEngine from './results.js';
+import { showSpinner, hideSpinner, showToast } from './ui_helpers.js';
 
 const API_URL = 'api/api.php';
 let currentTournamentId = null;
 let isEditMode = false;
-
-// Variável para guardar a data do torneio carregado
 let loadedTournamentDate = null; 
 
 function updateButtonStates() {
@@ -21,8 +20,6 @@ async function saveCurrentTournamentState() {
     const currentSession = tournamentEngine.getCurrentSessionState();
     if (!currentSession.currentState || !currentSession.currentState.type || !currentTournamentId) return;
 
-    // --- INÍCIO DA CORREÇÃO ---
-    // Usamos a data que guardámos ao carregar o torneio, garantindo que ela nunca é perdida.
     const payload = {
         public_id: currentTournamentId,
         bracket_data: currentSession,
@@ -30,8 +27,8 @@ async function saveCurrentTournamentState() {
         date: loadedTournamentDate,
         type: currentSession.currentState.type
     };
-    // --- FIM DA CORREÇÃO ---
 
+    showSpinner();
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -42,10 +39,12 @@ async function saveCurrentTournamentState() {
             const errorResult = await response.json();
             throw new Error(errorResult.message || "Failed to save.");
         }
-        console.log("State saved for tournament:", currentTournamentId);
+        showToast("Changes saved successfully!");
     } catch (error) {
-        console.error('Auto-save failed:', error);
-        alert("Failed to save changes to the server.");
+        console.error('Save failed:', error);
+        showToast(`Error saving: ${error.message}`, 'error');
+    } finally {
+        hideSpinner();
     }
 }
 
@@ -57,8 +56,7 @@ async function loadTournamentList() {
     listContainerWrapper.style.display = 'block';
     appContainer.style.display = 'none';
     
-    listContainer.innerHTML = '<h2>All Tournaments</h2><p>Loading...</p>';
-    
+    showSpinner();
     try {
         const response = await fetch(`${API_URL}?action=list`);
         const tournaments = await response.json();
@@ -88,7 +86,10 @@ async function loadTournamentList() {
 
     } catch (error) {
         console.error("Error loading tournament list:", error);
-        listContainer.innerHTML = '<h2>All Tournaments</h2><p>Could not load tournaments.</p>';
+        listContainer.innerHTML = '<h2>All Tournaments</h2><p>Could not load tournaments. Please try again later.</p>';
+        showToast("Could not load tournaments.", 'error');
+    } finally {
+        hideSpinner();
     }
 }
 
@@ -100,19 +101,12 @@ async function loadAndDisplayBracket(id) {
     adminControls.style.display = isEditMode ? 'flex' : 'none';
     
     const photoManager = document.getElementById('admin-photo-manager');
-    if (isEditMode) {
-        photoManager.style.display = 'block';
-    } else {
-        photoManager.style.display = 'none';
-    }
+    photoManager.style.display = isEditMode ? 'block' : 'none';
 
     const backButton = document.getElementById('back-to-list-btn');
-    if (isEditMode) {
-        backButton.textContent = "Back to Admin";
-    } else {
-        backButton.textContent = "Back to List";
-    }
+    backButton.textContent = isEditMode ? "Back to Admin" : "Back to List";
 
+    showSpinner();
     try {
         const response = await fetch(`${API_URL}?id=${id}`);
         if (!response.ok) throw new Error('Tournament not found.');
@@ -120,24 +114,23 @@ async function loadAndDisplayBracket(id) {
         const tournamentDataFromServer = await response.json();
         
         const sessionData = tournamentDataFromServer.bracket_data;
-        loadedTournamentDate = tournamentDataFromServer.tournament_date; // Guarda a data
+        loadedTournamentDate = tournamentDataFromServer.tournament_date; 
         
         tournamentEngine.initializeBracket(sessionData);
         currentTournamentId = id;
         
         updateTitleDisplay(tournamentDataFromServer.name, tournamentDataFromServer.tournament_date, tournamentDataFromServer.type);
         
-        const editTitleIcon = document.getElementById('edit-title-icon');
-        if (isEditMode) {
-            editTitleIcon.style.display = 'inline';
-        }
+        document.getElementById('edit-title-icon').style.display = isEditMode ? 'inline' : 'none';
         
         fullRender();
         loadTournamentPhotos(id);
 
     } catch(error) {
         console.error('Error loading tournament:', error);
-        alert(error.message);
+        showToast(error.message, 'error');
+    } finally {
+        hideSpinner();
     }
 }
 
@@ -241,45 +234,47 @@ async function handlePhotoUpload(event) {
     const files = photoInput.files;
 
     if (files.length === 0) {
-        alert("Please select files to upload.");
+        showToast("Please select files to upload.", 'error');
         return;
     }
     if (!currentTournamentId) {
-        alert("Cannot upload: No active tournament ID.");
+        showToast("Cannot upload: No active tournament ID.", 'error');
         return;
     }
 
-    const uploadPromises = [];
-    for (const file of files) {
+    showSpinner();
+    const uploadPromises = Array.from(files).map(file => {
         const formData = new FormData();
         formData.append('photo', file);
         formData.append('public_id', currentTournamentId);
 
-        const uploadPromise = fetch(`${API_URL}?action=upload`, {
+        return fetch(`${API_URL}?action=upload`, {
             method: 'POST',
             body: formData
         }).then(response => response.json().then(data => ({ok: response.ok, data, fileName: file.name})));
-        
-        uploadPromises.push(uploadPromise);
-    }
+    });
 
     try {
         const results = await Promise.all(uploadPromises);
         const successfulUploads = results.filter(r => r.ok).length;
         const failedUploads = results.filter(r => !r.ok);
-        let summaryMessage = `${successfulUploads} of ${results.length} files uploaded successfully.`;
-        if (failedUploads.length > 0) {
-            summaryMessage += '\n\nFailed uploads:\n';
-            failedUploads.forEach(fail => {
-                summaryMessage += `- ${fail.fileName}: ${fail.data.message}\n`;
-            });
+        
+        if(successfulUploads > 0) {
+            showToast(`${successfulUploads} of ${results.length} files uploaded successfully.`);
         }
-        alert(summaryMessage);
+        if(failedUploads.length > 0) {
+            let errorMsg = `Failed to upload ${failedUploads.length} file(s).`;
+            console.error("Failed uploads:", failedUploads);
+            showToast(errorMsg, 'error', 5000);
+        }
+
         form.reset();
         loadTournamentPhotos(currentTournamentId);
     } catch (error) {
         console.error("Error during batch upload:", error);
-        alert(`An unexpected error occurred during upload.`);
+        showToast(`An unexpected error occurred during upload.`, 'error');
+    } finally {
+        hideSpinner();
     }
 }
 
@@ -319,28 +314,15 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('undo-btn').addEventListener('click', undoAction);
             document.getElementById('redo-btn').addEventListener('click', redoAction);
             document.getElementById('save-btn').addEventListener('click', saveCurrentTournamentState);
+            document.getElementById('photo-upload-form')?.addEventListener('submit', handlePhotoUpload);
             
-            const photoForm = document.getElementById('photo-upload-form');
-            if (photoForm) {
-                photoForm.addEventListener('submit', handlePhotoUpload);
-            }
-
-            const editTitleIcon = document.getElementById('edit-title-icon');
-            const saveTitleBtn = document.getElementById('save-title-btn');
-            const cancelTitleBtn = document.getElementById('cancel-title-btn');
-
-            editTitleIcon.addEventListener('click', () => toggleTitleEdit(true));
-            cancelTitleBtn.addEventListener('click', () => toggleTitleEdit(false));
-
-            saveTitleBtn.addEventListener('click', () => {
+            document.getElementById('edit-title-icon').addEventListener('click', () => toggleTitleEdit(true));
+            document.getElementById('cancel-title-btn').addEventListener('click', () => toggleTitleEdit(false));
+            document.getElementById('save-title-btn').addEventListener('click', () => {
                 const newName = document.getElementById('edit-name-input').value;
                 const newDate = document.getElementById('edit-date-input').value;
-                
-                loadedTournamentDate = newDate; // Atualiza a data guardada
-                
-                const currentSession = tournamentEngine.getCurrentSessionState();
-                const currentType = currentSession.currentState.type;
-                
+                loadedTournamentDate = newDate;
+                const currentType = tournamentEngine.getCurrentSessionState().currentState.type;
                 updateTitleDisplay(newName, newDate, currentType);
                 saveCurrentTournamentState(); 
                 toggleTitleEdit(false);
@@ -350,10 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
 
     } else {
-        const appContainer = document.getElementById('app-container');
-        if (appContainer) {
-            appContainer.style.display = 'none';
-        }
+        document.getElementById('app-container')?.style.display = 'none';
         loadTournamentList();
     }
 });
