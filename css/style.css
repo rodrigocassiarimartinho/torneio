@@ -286,7 +286,6 @@ textarea {
     padding-left: 5px;
 }
 
-/* MUDANÇA: Esta regra agora se aplica por padrão, especialmente no modo ADMIN para jogos indefinidos. */
 .score-select:disabled {
     background-color: transparent;
     border-color: #E9ECEF;
@@ -295,12 +294,12 @@ textarea {
     opacity: 0.8;
 }
 
-/* MUDANÇA: Nova regra que FORÇA o estilo azul para placares desabilitados APENAS no modo público. */
 .public-view .score-select:disabled {
     background-color: #041A4A;
     border-color: #0A2F78;
     color: #FFFFFF;
-    opacity: 1;
+    cursor: default;
+    opacity: 1; /* CORREÇÃO: Removida a opacidade para a cor ficar sólida */
 }
 
 
