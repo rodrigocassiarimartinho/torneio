@@ -3,7 +3,7 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     background-color: #f0f2f5;
     margin: 0;
-    padding: 115px 2rem 2rem 2rem; /* Padding superior ajustado para o header fixo */
+    padding: 115px 2rem 2rem 2rem;
     box-sizing: border-box;
 }
 
@@ -61,13 +61,11 @@ textarea {
     background-color: #0A2F78;
 }
 
-/* --- INÍCIO DA CORREÇÃO DO HEADER FIXO --- */
 .app-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 2rem;
-    
     background-color: #f0f2f5;
     position: fixed;
     top: 0;
@@ -75,12 +73,9 @@ textarea {
     width: 100%;
     z-index: 100;
     box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    
-    /* Garante que o padding interno do header corresponda ao do body */
     padding: 1rem 2rem;
     box-sizing: border-box; 
 }
-/* --- FIM DA CORREÇÃO DO HEADER FIXO --- */
 
 .app-header h1 {
     margin: 0;
@@ -220,7 +215,6 @@ textarea {
 .admin-links .delete-link { color: #dc3545; background: none; border: none; padding: 0; font: inherit; cursor: pointer; text-decoration: underline; }
 .admin-links .delete-link:hover { color: #a71d2a; }
 
-/* REGRAS PARA O LAYOUT DA CLASSIFICAÇÃO */
 .main-content { display: flex; gap: 2rem; align-items: flex-start; }
 .brackets-column { flex-grow: 1; }
 #ranking-column { width: 360px; flex-shrink: 0; background-color: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.05); }
@@ -235,3 +229,10 @@ textarea {
 #ranking-table td:first-child { font-weight: 700; color: #041A4A; text-align: center; font-variant-numeric: tabular-nums; }
 #ranking-table td { font-size: 1rem; }
 #ranking-table td:nth-child(2) { font-weight: 500; }
+
+#admin-photo-manager { margin-top: 2.5rem; background-color: #fff; border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.05); width: 100%; }
+.photo-upload-area { padding: 0 20px 20px 20px; }
+#photo-upload-form p { margin-top: 0; margin-bottom: 1rem; color: #333; }
+#photo-upload-form input[type="file"] { display: block; margin-bottom: 1rem; }
+#photo-upload-form button { padding: 10px 20px; font-size: 1rem; font-weight: bold; color: #fff; background-color: #007bff; border: none; border-radius: 6px; cursor: pointer; transition: background-color 0.2s ease; }
+#photo-upload-form button:hover { background-color: #0056b3; }
