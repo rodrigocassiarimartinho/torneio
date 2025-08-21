@@ -401,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
 
     } else {
-        document.getElementById('app-container')?.style.display = 'none';
+        document.getElementById('app-container').style.display = 'none';
         loadTournamentList();
     }
 });
