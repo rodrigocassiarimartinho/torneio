@@ -1,4 +1,4 @@
-// js/main.js - Versão final completa
+// js/main.js - Versão com lógica do carrossel de fotos
 
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
@@ -89,6 +89,13 @@ async function loadAndDisplayBracket(id) {
 
     const adminControls = document.querySelector('.header-buttons-left');
     adminControls.style.display = isEditMode ? 'flex' : 'none';
+    
+    const photoManager = document.getElementById('admin-photo-manager');
+    if (isEditMode) {
+        photoManager.style.display = 'block';
+    } else {
+        photoManager.style.display = 'none';
+    }
 
     const backButton = document.getElementById('back-to-list-btn');
     if (isEditMode) {
@@ -110,18 +117,55 @@ async function loadAndDisplayBracket(id) {
         
         document.querySelector('#app-container h1').textContent = tournamentDataFromServer.name;
         
-        const photoManager = document.getElementById('admin-photo-manager');
-        if (isEditMode) {
-            photoManager.style.display = 'block';
-        } else {
-            photoManager.style.display = 'none';
-        }
-        
         fullRender();
+        loadTournamentPhotos(id);
 
     } catch(error) {
         console.error('Error loading tournament:', error);
         alert(error.message);
+    }
+}
+
+async function loadTournamentPhotos(id) {
+    const showPhotosBtn = document.getElementById('show-photos-btn');
+    try {
+        const response = await fetch(`${API_URL}?action=get_photos&id=${id}`);
+        const photos = await response.json();
+
+        if (photos.length > 0) {
+            showPhotosBtn.style.display = 'block';
+            
+            const photoModal = document.getElementById('photo-carousel-modal');
+            const closeModalBtn = photoModal.querySelector('.modal-close-btn');
+            const swiperWrapper = photoModal.querySelector('.swiper-wrapper');
+
+            showPhotosBtn.onclick = () => {
+                swiperWrapper.innerHTML = photos.map(fileName => `
+                    <div class="swiper-slide">
+                        <img src="uploads/${fileName}" alt="Tournament Photo">
+                    </div>
+                `).join('');
+                
+                photoModal.style.display = 'flex';
+
+                new Swiper('.swiper-container', {
+                    loop: photos.length > 1,
+                    pagination: { el: '.swiper-pagination', clickable: true },
+                    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
+                });
+            };
+
+            closeModalBtn.onclick = () => {
+                photoModal.style.display = 'none';
+                swiperWrapper.innerHTML = '';
+            };
+
+        } else {
+            showPhotosBtn.style.display = 'none';
+        }
+    } catch(error) {
+        console.error("Error loading photos:", error);
+        showPhotosBtn.style.display = 'none';
     }
 }
 
@@ -183,6 +227,7 @@ async function handlePhotoUpload(event) {
 
         alert(result.message);
         form.reset();
+        loadTournamentPhotos(currentTournamentId); // Recarrega as fotos para mostrar o botão se for a primeira
     } catch (error) {
         console.error("Error uploading photo:", error);
         alert(`Upload failed: ${error.message}`);
