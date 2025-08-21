@@ -48,7 +48,6 @@ textarea {
     margin-right: auto;
 }
 
-/* MUDANÇA: O seletor agora é mais específico e não causará mais conflitos. */
 #setup .generate-btn-main {
     margin-top: 1.5rem;
     padding: 12px 25px;
@@ -292,15 +291,19 @@ textarea {
     font-weight: 600;
     color: #6c757d;
     font-size: 0.9rem;
-    text-transform: uppercase;
+    /* MUDANÇA: Removido o text-transform e centralizado o texto */
+    text-transform: none;
+    text-align: center;
     padding: 0 8px 10px 8px;
-    text-align: left;
     border-bottom: 2px solid #e0e0e0;
 }
-#admin-tournament-list th:nth-child(1) { width: 50%; }
+#admin-tournament-list th:nth-child(1) { 
+    width: 50%;
+    text-align: left; /* Mantém o nome do torneio alinhado à esquerda */
+}
 #admin-tournament-list th:nth-child(2) { width: 120px; }
 #admin-tournament-list th:nth-child(3) { width: 120px; }
-#admin-tournament-list th:nth-child(4) { width: 240px; text-align: right;}
+#admin-tournament-list th:nth-child(4) { width: 240px; }
 
 #admin-tournament-list td {
     padding: 1rem 8px;
