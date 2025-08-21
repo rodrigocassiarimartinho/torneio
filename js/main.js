@@ -101,6 +101,9 @@ async function saveCurrentTournamentState() {
 }
 
 async function loadTournamentList() {
+    // MUDANÇA: Garante que a classe de visualização seja removida ao voltar para a lista.
+    document.body.classList.remove('public-view');
+
     const listContainer = document.getElementById('tournament-list');
     const appContainer = document.getElementById('app-container');
     const listContainerWrapper = document.getElementById('tournament-list-container');
@@ -146,6 +149,9 @@ async function loadTournamentList() {
 }
 
 async function loadAndDisplayBracket(id) {
+    // MUDANÇA: Adiciona ou remove a classe 'public-view' com base no modo de edição.
+    document.body.classList.toggle('public-view', !isEditMode);
+
     document.getElementById('tournament-list-container').style.display = 'none';
     document.getElementById('app-container').style.display = 'block';
 
@@ -395,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
 
     } else {
-        document.getElementById('app-container').style.display = 'none';
+        document.getElementById('app-container')?.style.display = 'none';
         loadTournamentList();
     }
 });
