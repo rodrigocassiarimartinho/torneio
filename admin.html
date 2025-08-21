@@ -6,15 +6,18 @@
     <title>Admin - Bracket Generator</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="js/admin.js" type="module" defer></script>
-    </head>
+</head>
 <body>
+    <div id="spinner-overlay" class="spinner-overlay"><div class="spinner"></div></div>
+    <div id="toast-container" class="toast-container"></div>
+
     <div id="setup">
         <h1>Admin Panel</h1>
 
         <div class="setup-section">
             <h2>Manage Existing Tournaments</h2>
             <div id="admin-tournament-list">
-                <p>Loading...</p>
+                <p>Loading tournaments...</p>
             </div>
         </div>
 
