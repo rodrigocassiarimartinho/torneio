@@ -300,7 +300,6 @@ textarea {
 #admin-tournament-list th:nth-child(1) { width: 50%; } /* Nome */
 #admin-tournament-list th:nth-child(2) { width: 120px; } /* Data */
 #admin-tournament-list th:nth-child(3) { width: 120px; } /* Tipo */
-/* CORREÇÃO: Aumentei a largura da coluna de ações para evitar quebra de linha */
 #admin-tournament-list th:nth-child(4) { width: 240px; text-align: right;} /* Ações */
 
 #admin-tournament-list td {
@@ -308,6 +307,10 @@ textarea {
     font-size: 1rem;
     vertical-align: middle;
     border-bottom: 1px solid #f0f0f0;
+    white-space: nowrap; /* Evita que o conteúdo da célula quebre a linha */
+}
+#admin-tournament-list td:nth-child(1) {
+    white-space: normal; /* Permite que o nome do torneio quebre a linha se for muito longo */
 }
 #admin-tournament-list tbody tr:last-child td {
     border-bottom: none;
@@ -318,23 +321,22 @@ textarea {
     color: #041A4A;
 }
 .admin-btn-compact {
+    box-sizing: border-box; /* CORREÇÃO: Garante que padding/border fiquem dentro da largura */
     padding: 6px 12px;
     font-size: 0.8rem;
     font-weight: 600;
-    border: none;
+    border: 1px solid transparent; /* Garante consistência de altura */
     border-radius: 4px;
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
     transition: all 0.2s ease;
     margin-left: 5px;
-    /* CORREÇÃO: Troquei min-width por width para forçar tamanho igual */
-    width: 70px; 
-    text-align: center; /* Centraliza o texto dentro do botão */
+    width: 70px; /* CORREÇÃO: Força a mesma largura para todos os botões */
+    text-align: center;
 }
 .admin-btn-compact.view-btn {
-    background-color: transparent;
-    border: 1px solid #007bff;
+    border-color: #007bff;
     color: #007bff;
 }
 .admin-btn-compact.view-btn:hover {
@@ -343,7 +345,7 @@ textarea {
 }
 .admin-btn-compact.edit-btn {
     background-color: #6c757d;
-    border: 1px solid #6c757d;
+    border-color: #6c757d;
     color: #fff;
 }
 .admin-btn-compact.edit-btn:hover {
@@ -351,8 +353,7 @@ textarea {
     border-color: #545b62;
 }
 .admin-btn-compact.delete-btn {
-    background-color: transparent;
-    border: 1px solid #dc3545;
+    border-color: #dc3545;
     color: #dc3545;
 }
 .admin-btn-compact.delete-btn:hover {
