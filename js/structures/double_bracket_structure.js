@@ -1,5 +1,5 @@
 // js/structures/double_bracket_structure.js
-// Versão com a lógica de emparceiramento cruzado na chave dos perdedores.
+// Versão com a sintaxe corrigida.
 
 import * as TMath from '../math.js';
 
@@ -47,8 +47,8 @@ export function buildDoubleBracketStructure(n_original) {
         }
         let wbLoserDropIndex = 1;
         for (let r = 1; r < losersBracket.length; r++) {
-            const pRoundIndex = r + 1; // Rodada da chave P (1-based)
-            const vRoundIndexSource = wbLoserDropIndex + 1; // Rodada da chave V de onde os perdedores vêm
+            const pRoundIndex = r + 1;
+            const vRoundIndexSource = wbLoserDropIndex + 1;
 
             const currentLosersRound = losersBracket[r];
             let lbWinners = losersBracket[r-1].map(m => ({ name: `Winner of M${m.id}`, isPlaceholder: true }));
@@ -58,12 +58,9 @@ export function buildDoubleBracketStructure(n_original) {
             if (loserDest === pRoundIndex) {
                 wbLosers = winnersBracket[wbLoserDropIndex].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
                 
-                // --- INÍCIO DA LÓGICA DE CRUZAMENTO ---
-                // Se a rodada de V de origem for par, inverte a ordem dos perdedores.
                 if (vRoundIndexSource % 2 === 0) { 
                     wbLosers.reverse(); 
                 }
-                // --- FIM DA LÓGICA DE CRUZAMENTO ---
                 wbLoserDropIndex++;
             }
             
