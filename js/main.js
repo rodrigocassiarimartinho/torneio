@@ -1,7 +1,5 @@
 // js/main.js - Versão adaptada para salvar e carregar a sessão completa
 
-alert('MAIN SCRIPT CARREGADO!');
-
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
 import * as tournamentEngine from './results.js';
