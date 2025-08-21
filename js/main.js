@@ -9,6 +9,58 @@ const API_URL = 'api/api.php';
 let currentTournamentId = null;
 let isEditMode = false;
 let loadedTournamentDate = null; 
+let swiperInstance = null;
+
+async function handlePhotoDelete(event) {
+    const button = event.target.closest('.delete-photo-btn');
+    if (!button) return;
+
+    const filename = button.dataset.filename;
+    if (!filename || !currentTournamentId) return;
+
+    if (!confirm(`Are you sure you want to delete this media? This action is irreversible.`)) {
+        return;
+    }
+
+    showSpinner();
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'delete_photo',
+                public_id: currentTournamentId,
+                filename: filename
+            })
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+        
+        showToast(result.message);
+
+        // Remove o slide do DOM e atualiza o Swiper
+        const slideToRemove = button.closest('.swiper-slide');
+        if (slideToRemove) {
+            const slideIndex = parseInt(slideToRemove.dataset.swiperSlideIndex, 10);
+            slideToRemove.remove();
+            swiperInstance.update();
+
+            // Se não houver mais slides, fecha o modal
+            if (swiperInstance.slides.length === 0) {
+                document.getElementById('photo-carousel-modal').style.display = 'none';
+                document.getElementById('show-photos-btn').style.display = 'none';
+            }
+        }
+
+    } catch (error) {
+        console.error('Error deleting photo:', error);
+        showToast(`Could not delete media: ${error.message}`, 'error');
+    } finally {
+        hideSpinner();
+    }
+}
+
 
 function updateButtonStates() {
     const { canUndo, canRedo } = tournamentEngine.getHistoryState();
@@ -165,27 +217,34 @@ async function loadTournamentPhotos(id) {
     try {
         const response = await fetch(`${API_URL}?action=get_photos&id=${id}`);
         const mediaFiles = await response.json();
+
         if (mediaFiles.length > 0) {
             showPhotosBtn.style.display = 'block';
             const photoModal = document.getElementById('photo-carousel-modal');
             const closeModalBtn = photoModal.querySelector('.modal-close-btn');
             const swiperWrapper = photoModal.querySelector('.swiper-wrapper');
+
             showPhotosBtn.onclick = () => {
                 swiperWrapper.innerHTML = mediaFiles.map(fileName => {
+                    const deleteButtonHTML = isEditMode ? `<button class="delete-photo-btn" data-filename="${fileName}">&times;</button>` : '';
                     const extension = fileName.split('.').pop().toLowerCase();
-                    if (['mp4', 'webm', 'mov'].includes(extension)) {
-                        return `<div class="swiper-slide"><video src="uploads/${fileName}" controls></video></div>`;
-                    } else {
-                        return `<div class="swiper-slide"><img src="uploads/${fileName}" alt="Tournament Media"></div>`;
-                    }
+                    const mediaElement = ['mp4', 'webm', 'mov'].includes(extension)
+                        ? `<video src="uploads/${fileName}" controls></video>`
+                        : `<img src="uploads/${fileName}" alt="Tournament Media">`;
+
+                    return `<div class="swiper-slide">${deleteButtonHTML}${mediaElement}</div>`;
                 }).join('');
+
                 photoModal.style.display = 'flex';
-                new Swiper('.swiper-container', {
+
+                if (swiperInstance) swiperInstance.destroy(true, true);
+                swiperInstance = new Swiper('.swiper-container', {
                     loop: mediaFiles.length > 1,
                     pagination: { el: '.swiper-pagination', clickable: true },
                     navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
                 });
             };
+
             closeModalBtn.onclick = () => {
                 photoModal.style.display = 'none';
                 swiperWrapper.innerHTML = '';
@@ -302,6 +361,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const params = new URLSearchParams(window.location.search);
     const tournamentId = params.get('id');
     isEditMode = params.get('edit') === 'true';
+
+    // Adiciona o listener para o carrossel usando delegação de eventos
+    document.getElementById('photo-carousel-modal').addEventListener('click', handlePhotoDelete);
+
 
     if (tournamentId) {
         loadAndDisplayBracket(tournamentId);
