@@ -1,4 +1,4 @@
-// js/main.js - Versão com edição de nome e data do torneio
+// js/main.js - Versão com a correção no envio de dados para a API
 
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
@@ -7,6 +7,9 @@ import * as tournamentEngine from './results.js';
 const API_URL = 'api/api.php';
 let currentTournamentId = null;
 let isEditMode = false;
+
+// Variável para guardar a data do torneio carregado
+let loadedTournamentDate = null; 
 
 function updateButtonStates() {
     const { canUndo, canRedo } = tournamentEngine.getHistoryState();
@@ -18,13 +21,16 @@ async function saveCurrentTournamentState() {
     const currentSession = tournamentEngine.getCurrentSessionState();
     if (!currentSession.currentState || !currentSession.currentState.type || !currentTournamentId) return;
 
+    // --- INÍCIO DA CORREÇÃO ---
+    // Usamos a data que guardámos ao carregar o torneio, garantindo que ela nunca é perdida.
     const payload = {
         public_id: currentTournamentId,
         bracket_data: currentSession,
         name: document.getElementById('main-tournament-title').textContent,
-        date: currentSession.currentState.tournament_date,
+        date: loadedTournamentDate,
         type: currentSession.currentState.type
     };
+    // --- FIM DA CORREÇÃO ---
 
     try {
         const response = await fetch(API_URL, {
@@ -32,11 +38,13 @@ async function saveCurrentTournamentState() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        if (!response.ok) throw new Error("Failed to save.");
+        if (!response.ok) {
+            const errorResult = await response.json();
+            throw new Error(errorResult.message || "Failed to save.");
+        }
         console.log("State saved for tournament:", currentTournamentId);
-        alert("Changes saved successfully!"); // Feedback para o admin
     } catch (error) {
-        console.error('Save failed:', error);
+        console.error('Auto-save failed:', error);
         alert("Failed to save changes to the server.");
     }
 }
@@ -112,6 +120,7 @@ async function loadAndDisplayBracket(id) {
         const tournamentDataFromServer = await response.json();
         
         const sessionData = tournamentDataFromServer.bracket_data;
+        loadedTournamentDate = tournamentDataFromServer.tournament_date; // Guarda a data
         
         tournamentEngine.initializeBracket(sessionData);
         currentTournamentId = id;
@@ -146,9 +155,8 @@ function toggleTitleEdit(editing) {
     const editArea = document.getElementById('title-edit-area');
 
     if (editing) {
-        const currentSession = tournamentEngine.getCurrentSessionState();
         document.getElementById('edit-name-input').value = document.getElementById('main-tournament-title').textContent;
-        document.getElementById('edit-date-input').value = currentSession.currentState.tournament_date;
+        document.getElementById('edit-date-input').value = loadedTournamentDate;
         displayArea.style.display = 'none';
         subtitle.style.display = 'none';
         editArea.style.display = 'flex';
@@ -164,14 +172,11 @@ async function loadTournamentPhotos(id) {
     try {
         const response = await fetch(`${API_URL}?action=get_photos&id=${id}`);
         const mediaFiles = await response.json();
-
         if (mediaFiles.length > 0) {
             showPhotosBtn.style.display = 'block';
-            
             const photoModal = document.getElementById('photo-carousel-modal');
             const closeModalBtn = photoModal.querySelector('.modal-close-btn');
             const swiperWrapper = photoModal.querySelector('.swiper-wrapper');
-
             showPhotosBtn.onclick = () => {
                 swiperWrapper.innerHTML = mediaFiles.map(fileName => {
                     const extension = fileName.split('.').pop().toLowerCase();
@@ -181,21 +186,17 @@ async function loadTournamentPhotos(id) {
                         return `<div class="swiper-slide"><img src="uploads/${fileName}" alt="Tournament Media"></div>`;
                     }
                 }).join('');
-                
                 photoModal.style.display = 'flex';
-
                 new Swiper('.swiper-container', {
                     loop: mediaFiles.length > 1,
                     pagination: { el: '.swiper-pagination', clickable: true },
                     navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
                 });
             };
-
             closeModalBtn.onclick = () => {
                 photoModal.style.display = 'none';
                 swiperWrapper.innerHTML = '';
             };
-
         } else {
             showPhotosBtn.style.display = 'none';
         }
@@ -266,7 +267,6 @@ async function handlePhotoUpload(event) {
         const results = await Promise.all(uploadPromises);
         const successfulUploads = results.filter(r => r.ok).length;
         const failedUploads = results.filter(r => !r.ok);
-
         let summaryMessage = `${successfulUploads} of ${results.length} files uploaded successfully.`;
         if (failedUploads.length > 0) {
             summaryMessage += '\n\nFailed uploads:\n';
@@ -274,7 +274,6 @@ async function handlePhotoUpload(event) {
                 summaryMessage += `- ${fail.fileName}: ${fail.data.message}\n`;
             });
         }
-        
         alert(summaryMessage);
         form.reset();
         loadTournamentPhotos(currentTournamentId);
@@ -337,12 +336,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newName = document.getElementById('edit-name-input').value;
                 const newDate = document.getElementById('edit-date-input').value;
                 
+                loadedTournamentDate = newDate; // Atualiza a data guardada
+                
                 const currentSession = tournamentEngine.getCurrentSessionState();
                 const currentType = currentSession.currentState.type;
-                
-                // Atualiza a data na sessão para que seja salva corretamente
-                currentSession.currentState.tournament_date = newDate;
-                tournamentEngine.initializeBracket(currentSession);
                 
                 updateTitleDisplay(newName, newDate, currentType);
                 saveCurrentTournamentState(); 
