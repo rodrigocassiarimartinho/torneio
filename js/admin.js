@@ -1,7 +1,5 @@
 // js/admin.js - Lógica completa para a página de administração
 
-alert('ADMIN SCRIPT CARREGADO!');
-
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
 import { populateSingleBracket } from './logic/single_player_logic.js';
@@ -103,13 +101,17 @@ async function createNewTournament() {
     }
     
     tournamentEngine.initializeBracket(populatedBracket);
-    const finalBracketData = tournamentEngine.getCurrentData();
+    
+    // --- INÍCIO DA CORREÇÃO ---
+    // Chamando o nome correto da função que existe em results.js
+    const finalBracketSession = tournamentEngine.getCurrentSessionState();
+    // --- FIM DA CORREÇÃO ---
 
     const payload = {
         name: name,
         date: date,
         type: type,
-        bracket_data: finalBracketData
+        bracket_data: finalBracketSession // Salva a sessão inteira
     };
 
     try {
@@ -145,7 +147,6 @@ function main() {
         adminListContainer.addEventListener('click', (event) => {
             if (event.target.classList.contains('delete-link')) {
                 const tournamentId = event.target.dataset.id;
-                // Pega o nome do torneio para uma mensagem de confirmação mais amigável
                 const tournamentName = event.target.closest('.admin-list-item').querySelector('.tournament-name').textContent;
                 deleteTournament(tournamentId, tournamentName);
             }
