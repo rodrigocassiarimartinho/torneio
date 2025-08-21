@@ -48,7 +48,8 @@ textarea {
     margin-right: auto;
 }
 
-#setup button {
+/* MUDANÇA: O seletor agora é mais específico e não causará mais conflitos. */
+#setup .generate-btn-main {
     margin-top: 1.5rem;
     padding: 12px 25px;
     font-size: 1.1rem;
@@ -63,7 +64,7 @@ textarea {
     margin-left: auto;
     margin-right: auto;
 }
-#setup button:hover {
+#setup .generate-btn-main:hover {
     background-color: #0A2F78;
 }
 
@@ -285,7 +286,7 @@ textarea {
     width: 100%;
     border-collapse: collapse;
     margin-top: 1rem;
-    table-layout: fixed; /* Força a tabela a obedecer as larguras definidas */
+    table-layout: fixed;
 }
 #admin-tournament-list th {
     font-weight: 600;
@@ -296,21 +297,20 @@ textarea {
     text-align: left;
     border-bottom: 2px solid #e0e0e0;
 }
-/* Define a largura das colunas */
-#admin-tournament-list th:nth-child(1) { width: 50%; } /* Nome */
-#admin-tournament-list th:nth-child(2) { width: 120px; } /* Data */
-#admin-tournament-list th:nth-child(3) { width: 120px; } /* Tipo */
-#admin-tournament-list th:nth-child(4) { width: 240px; text-align: right;} /* Ações */
+#admin-tournament-list th:nth-child(1) { width: 50%; }
+#admin-tournament-list th:nth-child(2) { width: 120px; }
+#admin-tournament-list th:nth-child(3) { width: 120px; }
+#admin-tournament-list th:nth-child(4) { width: 240px; text-align: right;}
 
 #admin-tournament-list td {
     padding: 1rem 8px;
     font-size: 1rem;
     vertical-align: middle;
     border-bottom: 1px solid #f0f0f0;
-    white-space: nowrap; /* Evita que o conteúdo da célula quebre a linha */
+    white-space: nowrap;
 }
 #admin-tournament-list td:nth-child(1) {
-    white-space: normal; /* Permite que o nome do torneio quebre a linha se for muito longo */
+    white-space: normal;
 }
 #admin-tournament-list tbody tr:last-child td {
     border-bottom: none;
@@ -321,18 +321,18 @@ textarea {
     color: #041A4A;
 }
 .admin-btn-compact {
-    box-sizing: border-box; /* CORREÇÃO: Garante que padding/border fiquem dentro da largura */
+    box-sizing: border-box;
     padding: 6px 12px;
     font-size: 0.8rem;
     font-weight: 600;
-    border: 1px solid transparent; /* Garante consistência de altura */
+    border: 1px solid transparent;
     border-radius: 4px;
     cursor: pointer;
     text-decoration: none;
     display: inline-block;
     transition: all 0.2s ease;
     margin-left: 5px;
-    width: 70px; /* CORREÇÃO: Força a mesma largura para todos os botões */
+    width: 70px;
     text-align: center;
 }
 .admin-btn-compact.view-btn {
