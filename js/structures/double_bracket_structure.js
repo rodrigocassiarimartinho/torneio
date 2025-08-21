@@ -1,5 +1,5 @@
 // js/structures/double_bracket_structure.js
-// Versão com a sintaxe corrigida.
+// Versão com a lógica de emparceiramento da chave dos perdedores corrigida.
 
 import * as TMath from '../math.js';
 
