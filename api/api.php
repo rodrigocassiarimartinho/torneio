@@ -2,6 +2,7 @@
 require_once 'config.php';
 $conn = getDbConnection();
 $method = $_SERVER['REQUEST_METHOD'];
+header('Content-Type: application/json');
 
 if ($method == 'POST' && isset($_GET['action']) && $_GET['action'] == 'upload') {
     handleUploadRequest($conn);
@@ -17,6 +18,8 @@ if ($method == 'POST' && isset($_GET['action']) && $_GET['action'] == 'upload') 
     $data = json_decode(file_get_contents('php://input'));
     if (isset($data->action) && $data->action == 'delete') {
         handleDeleteRequest($conn, $data);
+    } elseif (isset($data->action) && $data->action == 'delete_photo') { // <-- NOVA LÓGICA
+        handleDeletePhotoRequest($conn, $data);
     } else {
         handlePostRequest($conn, $data);
     }
@@ -25,6 +28,62 @@ if ($method == 'POST' && isset($_GET['action']) && $_GET['action'] == 'upload') 
     echo json_encode(['message' => 'Method not allowed']);
 }
 $conn->close();
+
+// --- NOVA FUNÇÃO PARA APAGAR FOTOS ---
+function handleDeletePhotoRequest($conn, $data) {
+    if (!isset($data->public_id) || !isset($data->filename)) {
+        http_response_code(400);
+        echo json_encode(['message' => 'Tournament ID and filename are required.']);
+        return;
+    }
+
+    $public_id = $data->public_id;
+    // Medida de segurança crucial para evitar ataques de Path Traversal (ex: ../../arquivo_importante.php)
+    $filename = basename($data->filename);
+
+    // Encontra o ID interno do torneio
+    $stmt_find = $conn->prepare("SELECT tournament_id FROM tournaments WHERE public_id = ?");
+    $stmt_find->bind_param("s", $public_id);
+    $stmt_find->execute();
+    $result = $stmt_find->get_result();
+    if ($result->num_rows === 0) {
+        http_response_code(404);
+        echo json_encode(['message' => 'Tournament not found.']);
+        return;
+    }
+    $tournament_id = $result->fetch_assoc()['tournament_id'];
+    $stmt_find->close();
+
+    // Apaga o registro do banco de dados
+    $stmt_delete = $conn->prepare("DELETE FROM tournament_photos WHERE tournament_id = ? AND file_name = ?");
+    $stmt_delete->bind_param("is", $tournament_id, $filename);
+    $stmt_delete->execute();
+
+    if ($stmt_delete->affected_rows > 0) {
+        // Se o registro foi apagado do DB, tenta apagar o arquivo físico
+        $file_path = "../uploads/" . $filename;
+        if (file_exists($file_path)) {
+            if (unlink($file_path)) {
+                http_response_code(200);
+                echo json_encode(['message' => 'Photo deleted successfully.']);
+            } else {
+                // O registro do DB foi removido, mas o arquivo físico não pôde ser apagado.
+                // Para o usuário, a foto sumiu, mas é bom registrar o erro no servidor.
+                error_log("Failed to delete file from filesystem: " . $file_path);
+                http_response_code(200); // Ainda retorna sucesso para o cliente
+                echo json_encode(['message' => 'Photo record deleted, but file could not be removed from server.']);
+            }
+        } else {
+            http_response_code(200);
+            echo json_encode(['message' => 'Photo record deleted. File was not found on server.']);
+        }
+    } else {
+        http_response_code(404);
+        echo json_encode(['message' => 'Photo not found in this tournament\'s gallery.']);
+    }
+    $stmt_delete->close();
+}
+
 
 function handleUploadRequest($conn) {
     if (!isset($_POST['public_id']) || empty($_POST['public_id'])) {
@@ -195,18 +254,13 @@ function handleGetRequest($conn) {
     $stmt->close();
 }
 
-// --- INÍCIO DA CORREÇÃO ---
 function handleListRequest($conn) {
     $result = $conn->query("SELECT public_id, name, tournament_date, type FROM tournaments ORDER BY tournament_date DESC, name ASC");
-
-    // Adiciona uma verificação para ver se a consulta SQL falhou
     if ($result === false) {
-        http_response_code(500); // Internal Server Error
-        // Retorna o erro específico do MySQL para nos ajudar a depurar
+        http_response_code(500);
         echo json_encode(['message' => 'Database query failed.', 'error' => $conn->error]);
-        return; // Para a execução
+        return;
     }
-
     $tournaments = [];
     if ($result->num_rows > 0) {
         while($row = $result->fetch_assoc()) {
@@ -216,5 +270,4 @@ function handleListRequest($conn) {
     http_response_code(200);
     echo json_encode($tournaments);
 }
-// --- FIM DA CORREÇÃO ---
 ?>
