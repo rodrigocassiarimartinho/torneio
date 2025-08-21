@@ -1,4 +1,4 @@
-// js/main.js - Versão adaptada para salvar e carregar a sessão completa
+// js/main.js - Versão final completa
 
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
@@ -110,6 +110,13 @@ async function loadAndDisplayBracket(id) {
         
         document.querySelector('#app-container h1').textContent = tournamentDataFromServer.name;
         
+        const photoManager = document.getElementById('admin-photo-manager');
+        if (isEditMode) {
+            photoManager.style.display = 'block';
+        } else {
+            photoManager.style.display = 'none';
+        }
+        
         fullRender();
 
     } catch(error) {
@@ -143,6 +150,42 @@ function fullRender() {
     renderRanking(currentData.ranking, '#ranking-table');
     if (isEditMode) {
         updateButtonStates();
+    }
+}
+
+async function handlePhotoUpload(event) {
+    event.preventDefault();
+    const form = event.target;
+    const photoInput = document.getElementById('photo-input');
+    const file = photoInput.files[0];
+
+    if (!file) {
+        alert("Please select a photo to upload.");
+        return;
+    }
+    if (!currentTournamentId) {
+        alert("Cannot upload photo: No active tournament ID.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('photo', file);
+    formData.append('public_id', currentTournamentId);
+
+    try {
+        const response = await fetch(`${API_URL}?action=upload`, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message);
+
+        alert(result.message);
+        form.reset();
+    } catch (error) {
+        console.error("Error uploading photo:", error);
+        alert(`Upload failed: ${error.message}`);
     }
 }
 
@@ -182,6 +225,11 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('undo-btn').addEventListener('click', undoAction);
             document.getElementById('redo-btn').addEventListener('click', redoAction);
             document.getElementById('save-btn').addEventListener('click', saveCurrentTournamentState);
+            
+            const photoForm = document.getElementById('photo-upload-form');
+            if (photoForm) {
+                photoForm.addEventListener('submit', handlePhotoUpload);
+            }
         }
         
         document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
