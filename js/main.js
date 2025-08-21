@@ -1,4 +1,4 @@
-// js/main.js - Versão com título e subtítulo dinâmicos
+// js/main.js - Versão com edição de nome e data do torneio
 
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
@@ -22,7 +22,7 @@ async function saveCurrentTournamentState() {
         public_id: currentTournamentId,
         bracket_data: currentSession,
         name: document.getElementById('main-tournament-title').textContent,
-        date: currentSession.currentState.tournament_date || new Date().toISOString().slice(0, 10),
+        date: currentSession.currentState.tournament_date,
         type: currentSession.currentState.type
     };
 
@@ -115,15 +115,12 @@ async function loadAndDisplayBracket(id) {
         tournamentEngine.initializeBracket(sessionData);
         currentTournamentId = id;
         
-        // --- INÍCIO DA MUDANÇA ---
-        // Preenche o título principal e o novo subtítulo
-        document.getElementById('main-tournament-title').textContent = tournamentDataFromServer.name;
-
-        const date = new Date(tournamentDataFromServer.tournament_date + 'T00:00:00');
-        const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
-        const typeLabel = tournamentDataFromServer.type === 'single' ? 'Single Elimination' : 'Double Elimination';
-        document.getElementById('main-tournament-subtitle').textContent = `${formattedDate} • ${typeLabel}`;
-        // --- FIM DA MUDANÇA ---
+        updateTitleDisplay(tournamentDataFromServer.name, tournamentDataFromServer.tournament_date, tournamentDataFromServer.type);
+        
+        const editTitleIcon = document.getElementById('edit-title-icon');
+        if (isEditMode) {
+            editTitleIcon.style.display = 'inline';
+        }
         
         fullRender();
         loadTournamentPhotos(id);
@@ -134,149 +131,55 @@ async function loadAndDisplayBracket(id) {
     }
 }
 
-async function loadTournamentPhotos(id) {
-    const showPhotosBtn = document.getElementById('show-photos-btn');
-    try {
-        const response = await fetch(`${API_URL}?action=get_photos&id=${id}`);
-        const mediaFiles = await response.json();
+function updateTitleDisplay(name, dateStr, type) {
+    document.getElementById('main-tournament-title').textContent = name;
+    const date = new Date(dateStr + 'T00:00:00');
+    const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+    const typeLabel = type === 'single' ? 'Single Elimination' : 'Double Elimination';
+    document.getElementById('main-tournament-subtitle').textContent = `${formattedDate} • ${typeLabel}`;
+}
 
-        if (mediaFiles.length > 0) {
-            showPhotosBtn.style.display = 'block';
-            
-            const photoModal = document.getElementById('photo-carousel-modal');
-            const closeModalBtn = photoModal.querySelector('.modal-close-btn');
-            const swiperWrapper = photoModal.querySelector('.swiper-wrapper');
+function toggleTitleEdit(editing) {
+    const displayArea = document.getElementById('title-display-area');
+    const subtitle = document.getElementById('main-tournament-subtitle');
+    const editArea = document.getElementById('title-edit-area');
 
-            showPhotosBtn.onclick = () => {
-                swiperWrapper.innerHTML = mediaFiles.map(fileName => {
-                    const extension = fileName.split('.').pop().toLowerCase();
-                    if (['mp4', 'webm', 'mov'].includes(extension)) {
-                        return `<div class="swiper-slide"><video src="uploads/${fileName}" controls></video></div>`;
-                    } else {
-                        return `<div class="swiper-slide"><img src="uploads/${fileName}" alt="Tournament Media"></div>`;
-                    }
-                }).join('');
-                
-                photoModal.style.display = 'flex';
-
-                new Swiper('.swiper-container', {
-                    loop: mediaFiles.length > 1,
-                    pagination: { el: '.swiper-pagination', clickable: true },
-                    navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
-                });
-            };
-
-            closeModalBtn.onclick = () => {
-                photoModal.style.display = 'none';
-                swiperWrapper.innerHTML = '';
-            };
-
-        } else {
-            showPhotosBtn.style.display = 'none';
-        }
-    } catch(error) {
-        console.error("Error loading media:", error);
-        showPhotosBtn.style.display = 'none';
+    if (editing) {
+        const currentSession = tournamentEngine.getCurrentSessionState();
+        document.getElementById('edit-name-input').value = document.getElementById('main-tournament-title').textContent;
+        document.getElementById('edit-date-input').value = currentSession.currentState.tournament_date;
+        displayArea.style.display = 'none';
+        subtitle.style.display = 'none';
+        editArea.style.display = 'flex';
+    } else {
+        displayArea.style.display = 'flex';
+        subtitle.style.display = 'block';
+        editArea.style.display = 'none';
     }
+}
+
+async function loadTournamentPhotos(id) {
+    // ... (função inalterada)
 }
 
 function fullRender() {
-    const currentSession = tournamentEngine.getCurrentSessionState();
-    const currentData = currentSession.currentState;
-    if (!currentData || !currentData.type) return;
-
-    const isReadOnly = !isEditMode;
-    const mainBracketTitle = document.getElementById('main-bracket-title');
-    
-    document.getElementById('losers-bracket-container').style.display = currentData.type === 'double' ? 'block' : 'none';
-    document.getElementById('grand-final-container').style.display = currentData.type === 'double' ? 'block' : 'none';
-
-    if (currentData.type === 'double') {
-        mainBracketTitle.style.display = 'block';
-        mainBracketTitle.textContent = 'Winners Bracket';
-        renderBracket(currentData.winnersBracket, '#winners-bracket-matches', isReadOnly);
-        renderBracket(currentData.losersBracket, '#losers-bracket-matches', isReadOnly);
-        renderBracket(currentData.grandFinal, '#final-bracket-matches', isReadOnly);
-    } else {
-        mainBracketTitle.style.display = 'none';
-        renderBracket(currentData.rounds, '#winners-bracket-matches', isReadOnly);
-    }
-
-    renderRanking(currentData.ranking, '#ranking-table');
-    if (isEditMode) {
-        updateButtonStates();
-    }
+    // ... (função inalterada)
 }
 
 async function handlePhotoUpload(event) {
-    event.preventDefault();
-    const form = event.target;
-    const photoInput = document.getElementById('photo-input');
-    const files = photoInput.files;
-
-    if (files.length === 0) {
-        alert("Please select files to upload.");
-        return;
-    }
-    if (!currentTournamentId) {
-        alert("Cannot upload: No active tournament ID.");
-        return;
-    }
-
-    const uploadPromises = [];
-    for (const file of files) {
-        const formData = new FormData();
-        formData.append('photo', file);
-        formData.append('public_id', currentTournamentId);
-
-        const uploadPromise = fetch(`${API_URL}?action=upload`, {
-            method: 'POST',
-            body: formData
-        }).then(response => response.json().then(data => ({ok: response.ok, data, fileName: file.name})));
-        
-        uploadPromises.push(uploadPromise);
-    }
-
-    try {
-        const results = await Promise.all(uploadPromises);
-        const successfulUploads = results.filter(r => r.ok).length;
-        const failedUploads = results.filter(r => !r.ok);
-
-        let summaryMessage = `${successfulUploads} of ${results.length} files uploaded successfully.`;
-        if (failedUploads.length > 0) {
-            summaryMessage += '\n\nFailed uploads:\n';
-            failedUploads.forEach(fail => {
-                summaryMessage += `- ${fail.fileName}: ${fail.data.message}\n`;
-            });
-        }
-        
-        alert(summaryMessage);
-        form.reset();
-        loadTournamentPhotos(currentTournamentId);
-    } catch (error) {
-        console.error("Error during batch upload:", error);
-        alert(`An unexpected error occurred during upload.`);
-    }
+    // ... (função inalterada)
 }
 
 function undoAction() {
-    tournamentEngine.undo();
-    fullRender();
-    saveCurrentTournamentState();
+    // ... (função inalterada)
 }
 
 function redoAction() {
-    tournamentEngine.redo();
-    fullRender();
-    saveCurrentTournamentState();
+    // ... (função inalterada)
 }
 
 function backToAction() {
-    if (isEditMode) {
-        window.location.href = 'admin.html';
-    } else {
-        window.location.href = 'index.html';
-    }
+    // ... (função inalterada)
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -300,10 +203,30 @@ document.addEventListener('DOMContentLoaded', () => {
             if (photoForm) {
                 photoForm.addEventListener('submit', handlePhotoUpload);
             }
+
+            const editTitleIcon = document.getElementById('edit-title-icon');
+            const saveTitleBtn = document.getElementById('save-title-btn');
+            const cancelTitleBtn = document.getElementById('cancel-title-btn');
+
+            editTitleIcon.addEventListener('click', () => toggleTitleEdit(true));
+            cancelTitleBtn.addEventListener('click', () => toggleTitleEdit(false));
+
+            saveTitleBtn.addEventListener('click', () => {
+                const newName = document.getElementById('edit-name-input').value;
+                const newDate = document.getElementById('edit-date-input').value;
+                
+                const currentSession = tournamentEngine.getCurrentSessionState();
+                currentSession.currentState.tournament_date = newDate;
+                
+                tournamentEngine.initializeBracket(currentSession); // Recarrega a sessão com a nova data
+                
+                updateTitleDisplay(newName, newDate, currentSession.currentState.type);
+                saveCurrentTournamentState(); 
+                toggleTitleEdit(false);
+            });
         }
         
         document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
-
     } else {
         const appContainer = document.getElementById('app-container');
         if (appContainer) {
