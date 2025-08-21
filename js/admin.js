@@ -1,4 +1,4 @@
-// js/admin.js - Lógica completa para a página de administração
+// js/admin.js - Lógica completa para a página de administração com feedback visual
 
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
@@ -6,14 +6,13 @@ import { populateSingleBracket } from './logic/single_player_logic.js';
 import { populateDoubleBracket } from './logic/double_player_logic.js';
 import { parsePlayerInput } from './parsing.js';
 import * as tournamentEngine from './results.js';
+import { showSpinner, hideSpinner, showToast } from './ui_helpers.js';
 
 const API_URL = 'api/api.php';
 
-/**
- * Busca e exibe a lista de torneios com links de Edição e Visualização.
- */
 async function loadAdminTournamentList() {
     const listContainer = document.getElementById('admin-tournament-list');
+    showSpinner();
     try {
         const response = await fetch(`${API_URL}?action=list`);
         const tournaments = await response.json();
@@ -23,36 +22,56 @@ async function loadAdminTournamentList() {
             return;
         }
 
-        let html = '<ul>';
+        let tableHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th class="actions-column">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
         tournaments.forEach(t => {
-            html += `
-                <li class="admin-list-item">
-                    <span class="tournament-name">${t.name}</span>
-                    <div class="admin-links">
-                        <a href="index.html?id=${t.public_id}" target="_blank" title="View as public">View</a>
-                        <a href="index.html?id=${t.public_id}&edit=true" class="edit-link" title="Edit this tournament">Edit</a>
-                        <button class="delete-link" data-id="${t.public_id}" title="Delete this tournament">Delete</button>
-                    </div>
-                </li>
+            const date = new Date(t.tournament_date + 'T00:00:00');
+            const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const typeLabel = t.type.charAt(0).toUpperCase() + t.type.slice(1);
+
+            tableHtml += `
+                <tr>
+                    <td><span class="tournament-name">${t.name}</span></td>
+                    <td>${formattedDate}</td>
+                    <td>${typeLabel}</td>
+                    <td class="actions-column">
+                        <a href="index.html?id=${t.public_id}" target="_blank" class="admin-btn-compact view-btn" title="View as public">View</a>
+                        <a href="index.html?id=${t.public_id}&edit=true" class="admin-btn-compact edit-btn" title="Edit this tournament">Edit</a>
+                        <button class="admin-btn-compact delete-btn" data-id="${t.public_id}" title="Delete this tournament">Delete</button>
+                    </td>
+                </tr>
             `;
         });
-        html += '</ul>';
-        listContainer.innerHTML = html;
+
+        tableHtml += '</tbody></table>';
+        listContainer.innerHTML = tableHtml;
 
     } catch (error) {
         listContainer.innerHTML = '<p>Could not load tournaments.</p>';
+        showToast("Error loading tournaments.", "error");
         console.error("Error loading tournament list for admin:", error);
+    } finally {
+        hideSpinner();
     }
 }
 
-/**
- * Apaga um torneio após confirmação.
- */
 async function deleteTournament(id, name) {
     if (!confirm(`Are you sure you want to delete the tournament "${name}"? This action is irreversible.`)) {
         return;
     }
 
+    showSpinner();
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -62,17 +81,16 @@ async function deleteTournament(id, name) {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
 
-        alert(result.message);
-        loadAdminTournamentList(); // Recarrega a lista para remover o item apagado
+        showToast(result.message);
+        loadAdminTournamentList(); 
     } catch (error) {
         console.error('Error deleting tournament:', error);
-        alert(`Could not delete tournament: ${error.message}`);
+        showToast(`Could not delete tournament: ${error.message}`, 'error');
+    } finally {
+        hideSpinner();
     }
 }
 
-/**
- * Coleta os dados do formulário, cria uma nova chave e a salva via API.
- */
 async function createNewTournament() {
     const name = document.getElementById('tournament-name').value.trim();
     const date = document.getElementById('tournament-date').value;
@@ -80,14 +98,14 @@ async function createNewTournament() {
     const type = document.querySelector('input[name="bracket-type"]:checked').value;
 
     if (!name || !date || !playerInput) {
-        alert("Please fill all tournament details: Name, Date, and Player List.");
+        showToast("Please fill all tournament details: Name, Date, and Player List.", "error");
         return;
     }
     
     const { unseededPlayers, seededPlayers } = parsePlayerInput(playerInput);
     const playerCount = unseededPlayers.length + seededPlayers.length;
     if (playerCount < 2) {
-        alert("Please enter at least 2 players.");
+        showToast("Please enter at least 2 players.", "error");
         return;
     }
 
@@ -102,18 +120,16 @@ async function createNewTournament() {
     
     tournamentEngine.initializeBracket(populatedBracket);
     
-    // --- INÍCIO DA CORREÇÃO ---
-    // Chamando o nome correto da função que existe em results.js
     const finalBracketSession = tournamentEngine.getCurrentSessionState();
-    // --- FIM DA CORREÇÃO ---
 
     const payload = {
         name: name,
         date: date,
         type: type,
-        bracket_data: finalBracketSession // Salva a sessão inteira
+        bracket_data: finalBracketSession
     };
-
+    
+    showSpinner();
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
@@ -123,18 +139,18 @@ async function createNewTournament() {
         const result = await response.json();
         if (!response.ok) throw new Error(result.message);
 
-        alert(`Tournament "${name}" created successfully!`);
+        // A notificação de sucesso pode não ser vista devido ao redirecionamento,
+        // mas é bom tê-la caso o redirecionamento falhe.
+        showToast(`Tournament "${name}" created successfully!`);
         window.location.href = `index.html?id=${result.id}&edit=true`;
 
     } catch (error) {
         console.error('Error creating tournament:', error);
-        alert(`Could not create tournament: ${error.message}`);
+        showToast(`Could not create tournament: ${error.message}`, 'error');
+        hideSpinner(); // Esconde o spinner apenas em caso de erro
     }
 }
 
-/**
- * Ponto de entrada principal após o carregamento da página.
- */
 function main() {
     const generateBtn = document.getElementById('generate-btn');
     const adminListContainer = document.getElementById('admin-tournament-list');
@@ -145,9 +161,10 @@ function main() {
 
     if (adminListContainer) {
         adminListContainer.addEventListener('click', (event) => {
-            if (event.target.classList.contains('delete-link')) {
-                const tournamentId = event.target.dataset.id;
-                const tournamentName = event.target.closest('.admin-list-item').querySelector('.tournament-name').textContent;
+            const target = event.target;
+            if (target.classList.contains('delete-btn')) {
+                const tournamentId = target.dataset.id;
+                const tournamentName = target.closest('tr').querySelector('.tournament-name').textContent;
                 deleteTournament(tournamentId, tournamentName);
             }
         });
@@ -155,5 +172,4 @@ function main() {
     }
 }
 
-// Executa a função principal após o DOM estar pronto.
 document.addEventListener('DOMContentLoaded', main);
