@@ -1,4 +1,4 @@
-// js/main.js - Versão com lógica do carrossel de fotos
+// js/main.js - Versão com upload múltiplo de arquivos e suporte a vídeo no carrossel
 
 import { renderBracket, renderRanking } from './bracket_render.js';
 import { setupInteractivity } from './interactivity.js';
@@ -130,9 +130,9 @@ async function loadTournamentPhotos(id) {
     const showPhotosBtn = document.getElementById('show-photos-btn');
     try {
         const response = await fetch(`${API_URL}?action=get_photos&id=${id}`);
-        const photos = await response.json();
+        const mediaFiles = await response.json();
 
-        if (photos.length > 0) {
+        if (mediaFiles.length > 0) {
             showPhotosBtn.style.display = 'block';
             
             const photoModal = document.getElementById('photo-carousel-modal');
@@ -140,16 +140,27 @@ async function loadTournamentPhotos(id) {
             const swiperWrapper = photoModal.querySelector('.swiper-wrapper');
 
             showPhotosBtn.onclick = () => {
-                swiperWrapper.innerHTML = photos.map(fileName => `
-                    <div class="swiper-slide">
-                        <img src="uploads/${fileName}" alt="Tournament Photo">
-                    </div>
-                `).join('');
+                swiperWrapper.innerHTML = mediaFiles.map(fileName => {
+                    const extension = fileName.split('.').pop().toLowerCase();
+                    if (['mp4', 'webm', 'mov'].includes(extension)) {
+                        return `
+                            <div class="swiper-slide">
+                                <video src="uploads/${fileName}" controls></video>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="swiper-slide">
+                                <img src="uploads/${fileName}" alt="Tournament Media">
+                            </div>
+                        `;
+                    }
+                }).join('');
                 
                 photoModal.style.display = 'flex';
 
                 new Swiper('.swiper-container', {
-                    loop: photos.length > 1,
+                    loop: mediaFiles.length > 1,
                     pagination: { el: '.swiper-pagination', clickable: true },
                     navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
                 });
@@ -164,7 +175,7 @@ async function loadTournamentPhotos(id) {
             showPhotosBtn.style.display = 'none';
         }
     } catch(error) {
-        console.error("Error loading photos:", error);
+        console.error("Error loading media:", error);
         showPhotosBtn.style.display = 'none';
     }
 }
@@ -201,36 +212,50 @@ async function handlePhotoUpload(event) {
     event.preventDefault();
     const form = event.target;
     const photoInput = document.getElementById('photo-input');
-    const file = photoInput.files[0];
+    const files = photoInput.files;
 
-    if (!file) {
-        alert("Please select a photo to upload.");
+    if (files.length === 0) {
+        alert("Please select files to upload.");
         return;
     }
     if (!currentTournamentId) {
-        alert("Cannot upload photo: No active tournament ID.");
+        alert("Cannot upload: No active tournament ID.");
         return;
     }
 
-    const formData = new FormData();
-    formData.append('photo', file);
-    formData.append('public_id', currentTournamentId);
+    const uploadPromises = [];
+    for (const file of files) {
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('public_id', currentTournamentId);
 
-    try {
-        const response = await fetch(`${API_URL}?action=upload`, {
+        const uploadPromise = fetch(`${API_URL}?action=upload`, {
             method: 'POST',
             body: formData
-        });
+        }).then(response => response.json().then(data => ({ok: response.ok, data, fileName: file.name})));
+        
+        uploadPromises.push(uploadPromise);
+    }
 
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message);
+    try {
+        const results = await Promise.all(uploadPromises);
+        const successfulUploads = results.filter(r => r.ok).length;
+        const failedUploads = results.filter(r => !r.ok);
 
-        alert(result.message);
+        let summaryMessage = `${successfulUploads} of ${results.length} files uploaded successfully.`;
+        if (failedUploads.length > 0) {
+            summaryMessage += '\n\nFailed uploads:\n';
+            failedUploads.forEach(fail => {
+                summaryMessage += `- ${fail.fileName}: ${fail.data.message}\n`;
+            });
+        }
+        
+        alert(summaryMessage);
         form.reset();
-        loadTournamentPhotos(currentTournamentId); // Recarrega as fotos para mostrar o botão se for a primeira
+        loadTournamentPhotos(currentTournamentId);
     } catch (error) {
-        console.error("Error uploading photo:", error);
-        alert(`Upload failed: ${error.message}`);
+        console.error("Error during batch upload:", error);
+        alert(`An unexpected error occurred during upload.`);
     }
 }
 
