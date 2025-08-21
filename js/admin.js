@@ -1,5 +1,7 @@
 // js/admin.js - Lógica completa para a página de administração
 
+alert('ADMIN SCRIPT CARREGADO!');
+
 import { buildSingleBracketStructure } from './structures/single_bracket_structure.js';
 import { buildDoubleBracketStructure } from './structures/double_bracket_structure.js';
 import { populateSingleBracket } from './logic/single_player_logic.js';
