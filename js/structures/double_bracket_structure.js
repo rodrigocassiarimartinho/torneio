@@ -1,5 +1,5 @@
 // js/structures/double_bracket_structure.js
-// Versão com placeholder do campeão aprimorado.
+// Versão com a lógica de emparceiramento cruzado na chave dos perdedores.
 
 import * as TMath from '../math.js';
 
@@ -47,16 +47,26 @@ export function buildDoubleBracketStructure(n_original) {
         }
         let wbLoserDropIndex = 1;
         for (let r = 1; r < losersBracket.length; r++) {
-            const pRoundIndex = r + 1;
+            const pRoundIndex = r + 1; // Rodada da chave P (1-based)
+            const vRoundIndexSource = wbLoserDropIndex + 1; // Rodada da chave V de onde os perdedores vêm
+
             const currentLosersRound = losersBracket[r];
             let lbWinners = losersBracket[r-1].map(m => ({ name: `Winner of M${m.id}`, isPlaceholder: true }));
             let wbLosers = [];
-            const loserDest = TMath.getLoserDestinationRound(wbLoserDropIndex + 1);
+            
+            const loserDest = TMath.getLoserDestinationRound(vRoundIndexSource);
             if (loserDest === pRoundIndex) {
                 wbLosers = winnersBracket[wbLoserDropIndex].map(m => ({ name: `Loser of M${m.id}`, isPlaceholder: true }));
-                if (pRoundIndex > 1) { wbLosers.reverse(); }
+                
+                // --- INÍCIO DA LÓGICA DE CRUZAMENTO ---
+                // Se a rodada de V de origem for par, inverte a ordem dos perdedores.
+                if (vRoundIndexSource % 2 === 0) { 
+                    wbLosers.reverse(); 
+                }
+                // --- FIM DA LÓGICA DE CRUZAMENTO ---
                 wbLoserDropIndex++;
             }
+            
             currentLosersRound.forEach((match, matchIndex) => {
                 const isInternalRound = lbWinners.length > 0 && wbLosers.length === 0;
                 if (isInternalRound) {
@@ -102,12 +112,15 @@ export function buildDoubleBracketStructure(n_original) {
         }
     }
     
-    // A caixa do campeão agora é um item separado e final
-    const championBox = { id: matchIdCounter++, isChampionBox: true, p1: { name: 'Tournament Champion', isPlaceholder: true }, winnerDestination: `RANK:1º` };
+    const championBox = { 
+        id: matchIdCounter++, 
+        isChampionBox: true, 
+        p1: { name: 'Tournament Champion', isPlaceholder: true }, 
+        winnerDestination: `RANK:1º` 
+    };
     if (grandFinal.length > 0) {
         grandFinal.push([championBox]);
     } else if (winnersBracket.length > 0) {
-        // Para chaves muito pequenas sem final
         winnersBracket[winnersBracket.length-1][0].winnerDestination = 'Tournament Champion';
         winnersBracket.push([championBox]);
     }
