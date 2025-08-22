@@ -101,7 +101,6 @@ async function saveCurrentTournamentState() {
 }
 
 async function loadTournamentList() {
-    // MUDANÇA: Garante que a classe de visualização seja removida ao voltar para a lista.
     document.body.classList.remove('public-view');
 
     const listContainer = document.getElementById('tournament-list');
@@ -149,7 +148,6 @@ async function loadTournamentList() {
 }
 
 async function loadAndDisplayBracket(id) {
-    // MUDANÇA: Adiciona ou remove a classe 'public-view' com base no modo de edição.
     document.body.classList.toggle('public-view', !isEditMode);
 
     document.getElementById('tournament-list-container').style.display = 'none';
@@ -225,7 +223,10 @@ async function loadTournamentPhotos(id) {
         const mediaFiles = await response.json();
 
         if (mediaFiles.length > 0) {
-            showPhotosBtn.style.display = 'block';
+            showPhotosBtn.style.display = 'inline-block'; // Alterado para 'inline-block' para consistência
+            // MUDANÇA: Define o texto do botão
+            showPhotosBtn.textContent = 'Event Photos';
+
             const photoModal = document.getElementById('photo-carousel-modal');
             const closeModalBtn = photoModal.querySelector('.modal-close-btn');
             const swiperWrapper = photoModal.querySelector('.swiper-wrapper');
@@ -368,9 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tournamentId = params.get('id');
     isEditMode = params.get('edit') === 'true';
 
-    // Adiciona o listener para o carrossel usando delegação de eventos
     document.getElementById('photo-carousel-modal').addEventListener('click', handlePhotoDelete);
-
 
     if (tournamentId) {
         loadAndDisplayBracket(tournamentId);
@@ -401,7 +400,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('back-to-list-btn').addEventListener('click', backToAction);
 
     } else {
-        document.getElementById('app-container').style.display = 'none';
+        const appContainer = document.getElementById('app-container');
+        if (appContainer) {
+            appContainer.style.display = 'none';
+        }
         loadTournamentList();
     }
 });
